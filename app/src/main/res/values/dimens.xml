@@ -40,5 +40,6 @@
     <dimen name="dp_700">700dp</dimen>
     <dimen name="dp_1000">1000dp</dimen>
     <dimen name="dp_2">2dp</dimen>
+    <dimen name="dp_56">56.dp</dimen>
 
 </resources>
