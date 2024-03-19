@@ -7,17 +7,17 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ItemsX(
     @SerialName("brand")
-    val brand: String,
+    val brand: String = "",
     @SerialName("dateCreated")
-    val dateCreated: String,
+    val dateCreated: String = "",
     @SerialName("description")
-    val description: String,
+    val description: String = "",
     @SerialName("itemType")
-    val itemType: String,
+    val itemType: String = "",
     @SerialName("price")
-    val price: Int,
+    val price: Int = 0,
     @SerialName("title")
-    val title: String,
+    val title: String = "",
     @SerialName("id")
-    val id: Int,
+    val id: Int = 1,
 )

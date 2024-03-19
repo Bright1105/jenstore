@@ -41,6 +41,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -64,6 +66,8 @@ import com.example.jenstore.data.model.ItemsX
 import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
+import com.example.jenstore.ui.screens.search.SearchUiState
+import com.example.jenstore.ui.screens.search.SearchViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -77,10 +81,15 @@ fun HomeScreen(
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
     onCartClicked: () -> Unit,
-    onItemClicked: (Int) -> Unit
+    onItemClicked: (Int) -> Unit,
+    navigateToCart: (StoreDestinations) -> Unit,
+    navigateToSearch: (StoreDestinations) -> Unit,
 ) {
+
+
     val uiState: UiState by viewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
+
 
     when (homeUiState) {
         is HomeUiState.Loading -> Loading()
@@ -132,14 +141,15 @@ fun HomeScreen(
                 )
             } else {
                 ItemListScreen(
-                    value = "",
-                    onValueChange = {},
+                    navigateToSearch = navigateToSearch,
+                    navigateToCart = navigateToCart,
                     onListBackClicked = {
                         viewModel.listBackClicked()
                     },
                     items = uiState.itemType,
                     onBuyClicked = {},
-                    onItemClicked = onItemClicked
+                    onItemClicked = onItemClicked,
+                    currentRoute = currentScreen
                 )
             }
         }
@@ -552,6 +562,7 @@ private fun HomeItemImage(
         contentScale = ContentScale.Crop,
         error = painterResource(R.drawable.ic_broken_image),
         placeholder = painterResource(R.drawable.loading_img),
+        filterQuality = FilterQuality.High,
         modifier = modifier
             .width(200.dp)
             .height(200.dp)
@@ -595,13 +606,15 @@ fun Loading(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(R.drawable.loading_img),
-            contentDescription = "Error",
-            contentScale = ContentScale.Crop,
-            modifier = modifier
-                .fillMaxWidth()
-        )
+
+        CircularProgressIndicator()
+        //Image(
+        //            painter = painterResource(R.drawable.loading_img),
+        //            contentDescription = "Error",
+        //            contentScale = ContentScale.Crop,
+        //            modifier = modifier
+        //                .fillMaxWidth()
+        //        )
     }
 }
 

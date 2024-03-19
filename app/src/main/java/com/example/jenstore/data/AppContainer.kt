@@ -1,7 +1,11 @@
 package com.example.jenstore.data
 
 
+
+import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.network.StoreApiService
+import com.example.jenstore.ui.screens.search.SearchMatchQuery
+import com.example.jenstore.ui.screens.search.SearchMatchQueryImpl
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -11,6 +15,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 interface AppContainer {
 
     val repository: Repository
+
+    val searchMatchQuery: SearchMatchQuery
 }
 
 
@@ -26,12 +32,16 @@ class DefaultAppContainer : AppContainer {
         .build()
 
     //GsonConverterFactory.create()
-//
+
     private val retrofitService: StoreApiService by lazy {
         retrofit.create(StoreApiService::class.java)
     }
 
     override val repository: Repository by lazy {
         RepositoryImpl(retrofitService)
+    }
+
+    override val searchMatchQuery: SearchMatchQuery by lazy {
+        SearchMatchQueryImpl(item = ProductItem())
     }
 }

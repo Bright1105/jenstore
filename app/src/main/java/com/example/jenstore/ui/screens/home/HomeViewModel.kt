@@ -13,10 +13,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.jenstore.StoreApplication
 import com.example.jenstore.data.Repository
 import com.example.jenstore.data.model.ProductItem
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import okio.IOException
 
 
@@ -44,10 +46,10 @@ class HomeViewModel(private val repository: Repository) : ViewModel() {
     suspend fun seeHairAllClicked() {
         _uiState.update {
             it.copy(
-                isShowingHomePage = false,
                 itemType = repository.getItems().filter {  hair ->
                     hair.items.itemType == "hair"
-                }
+                },
+                isShowingHomePage = false
             )
         }
     }
@@ -55,10 +57,11 @@ class HomeViewModel(private val repository: Repository) : ViewModel() {
     suspend fun seeBagALlClicked() {
         _uiState.update {
             it.copy(
-                isShowingHomePage = false,
                 itemType = repository.getItems().filter {  bag ->
                     bag.items.itemType == "bag"
-                }
+                },
+                isShowingHomePage = false
+
             )
         }
     }
@@ -66,10 +69,10 @@ class HomeViewModel(private val repository: Repository) : ViewModel() {
     suspend fun seeShoeALlClicked() {
         _uiState.update {
             it.copy(
-                isShowingHomePage = false,
                 itemType = repository.getItems().filter {  shoe ->
                     shoe.items.itemType == "shoe"
-                }
+                },
+                isShowingHomePage = false
             )
         }
     }
@@ -77,10 +80,10 @@ class HomeViewModel(private val repository: Repository) : ViewModel() {
     suspend fun seeClotheALlClicked() {
         _uiState.update {
             it.copy(
-                isShowingHomePage = false,
                 itemType = repository.getItems().filter {  clothe ->
                     clothe.items.itemType == "clothe"
-                }
+                },
+                isShowingHomePage = false
             )
         }
     }
@@ -100,10 +103,12 @@ class HomeViewModel(private val repository: Repository) : ViewModel() {
         viewModelScope.launch {
             homeUiState = HomeUiState.Loading
             homeUiState = try {
-                HomeUiState.Success(repository.getItems()) //repository.getItemsBag(), repository.getItemShoe(), repository.getItemClothe()
+                HomeUiState.Success(repository.getItems())
             } catch (e: IOException) {
                 HomeUiState.Error(message = e.message)
             } catch (e: retrofit2.HttpException) {
+                HomeUiState.Error(message = e.message)
+            } catch (e: Throwable) {
                 HomeUiState.Error(message = e.message)
             }
         }

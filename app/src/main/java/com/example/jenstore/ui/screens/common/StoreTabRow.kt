@@ -44,7 +44,7 @@ fun StoreTabRow(
         Modifier
             .height(TabHeight)
             .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.tertiaryContainer
+        color = MaterialTheme.colorScheme.background
     ) {
         Row(
             Modifier

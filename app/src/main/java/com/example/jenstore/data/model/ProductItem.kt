@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProductItem(
     @SerialName("image")
-    val image: String,
+    val image: String = "",
     @SerialName("items")
-    val items: ItemsX,
+    val items: ItemsX = ItemsX() ,
 )

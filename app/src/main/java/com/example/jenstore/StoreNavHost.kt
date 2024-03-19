@@ -5,6 +5,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -20,9 +21,12 @@ import com.example.jenstore.ui.screens.productDetails.ProductDetailsUiState
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.screens.profile.ProfileScreen
 import com.example.jenstore.ui.screens.search.SearchScreen
+import com.example.jenstore.ui.screens.search.SearchViewModel
 import com.example.jenstore.ui.screens.setting.SettingScreen
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 
 @Composable
 fun StoreNavHost(
@@ -36,6 +40,7 @@ fun StoreNavHost(
 ) {
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
+
 
     NavHost(
         navController = navController,
@@ -55,8 +60,14 @@ fun StoreNavHost(
                 onItemClicked = {
                     scope.launch {
                         productDetailsViewModel.productItemById(it)
+                        navController.navigate("${ProductDetails.route}/$it")
                     }
-                    navController.navigate("${ProductDetails.route}/$it")
+                },
+                navigateToCart = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                navigateToSearch = {
+                    navController.navigateSingleTopTo(it.route)
                 }
             )
         }
@@ -64,7 +75,13 @@ fun StoreNavHost(
             SearchScreen(
                 allScreen = allScreen,
                 onTabClicked = onTabClicked,
-                currentScreen = route
+                currentScreen = route,
+                navigateToCart = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                navigateToSearch = {
+                    navController.navigateSingleTopTo(it.route)
+                }
             )
         }
         composable(route = MyCart.route) {

@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -58,27 +59,33 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.jenstore.MyCart
 import com.example.jenstore.R
+import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.ui.screens.search.SearchUiState
 
 
 @Composable
 fun ItemListScreen(
-    value: String,
-    onValueChange: (String) -> Unit,
+    navigateToCart: (StoreDestinations) -> Unit,
+    navigateToSearch: (StoreDestinations) -> Unit,
     onListBackClicked: () -> Unit,
     items: List<ProductItem>,
+    currentRoute: StoreDestinations,
     onBuyClicked: () -> Unit,
     onItemClicked: (Int) -> Unit,
 ) {
     Scaffold(
         topBar = {
-            ItemListTopAppBar(
-                value = value,
-                onValueChange = onValueChange,
-                onListBackClicked = onListBackClicked
-            )
+            if (currentRoute.route != Search.route) {
+                ItemListTopAppBar(
+                    onListBackClicked = onListBackClicked,
+                    navigateToSearch = navigateToSearch,
+                    navigateToCart = navigateToCart,
+                )
+            }
         },
     ) {
         Column(
@@ -121,7 +128,7 @@ private fun ItemList(
 
 
 @Composable
-private fun Item(
+fun Item(
     item: ProductItem,
     onBuyClicked: () -> Unit,
     modifier: Modifier = Modifier
@@ -262,21 +269,20 @@ private fun ItemButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemListTopAppBar(
-    value: String,
-    onValueChange: (String) -> Unit,
     onListBackClicked: () -> Unit,
+    navigateToSearch: (StoreDestinations) -> Unit,
+    navigateToCart: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
     CenterAlignedTopAppBar(
         title = {
-            ItemInputFiled(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = modifier
-                    .padding(start = dimensionResource(R.dimen.dp_15))
-            )
+                Text(
+                    text = stringResource(R.string.store_name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
         },
-        actions = {
+        navigationIcon = {
             IconButton(
                 onClick = onListBackClicked
             ) {
@@ -287,47 +293,30 @@ fun ItemListTopAppBar(
                 )
             }
         },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(MaterialTheme.colorScheme.tertiaryContainer),
-    )
-}
+        actions = {
+            IconButton(
+                onClick = { navigateToSearch(Search) }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringResource(R.string.search),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+            IconButton(
+                onClick = { navigateToCart(MyCart) }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = stringResource(R.string.cart),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ItemInputFiled(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = stringResource(R.string.search),
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
-            )
         },
-        shape = ShapeDefaults.Small,
-        placeholder = {
-            Text(
-                text = stringResource(R.string.search),
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.background
-            )
-        },
-        keyboardOptions = KeyboardOptions.Default.copy(
-            autoCorrect = true,
-            imeAction = ImeAction.Done
-        ),
-        singleLine = true,
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = MaterialTheme.colorScheme.background,
-            unfocusedBorderColor = MaterialTheme.colorScheme.onTertiaryContainer
-        ),
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(MaterialTheme.colorScheme.background),
         modifier = modifier
-            .animateContentSize()
-            .height(dimensionResource(R.dimen.dp_50))
     )
 }
+
+
