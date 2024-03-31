@@ -78,4 +78,20 @@
     <string name="topBarName">Jenny Store</string>
     <string name="item_image">Item Images</string>
     <string name="price1">Price:</string>
+    <string name="viewAll">View All</string>
+    <string name="available">Available in stock</string>
+    <string name="size">Size</string>
+    <string name="totalPrice">Total Price</string>
+    <string name="addToCart">Add to cart</string>
+    <string name="account">Account</string>
+    <string name="arrowForward">Arrow Forward</string>
+    <string name="orders">Orders</string>
+    <string name="inbox">Inbox</string>
+    <string name="notification">Notification</string>
+    <string name="savedItem">Save items</string>
+    <string name="myAccount">My Account</string>
+    <string name="mySettings">My Settings</string>
+    <string name="address">Address</string>
+    <string name="logOut">LOGOUT</string>
+    <string name="promotion">Promotions</string>
 </resources>

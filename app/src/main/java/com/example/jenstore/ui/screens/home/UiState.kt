@@ -4,5 +4,6 @@ import com.example.jenstore.data.model.ProductItem
 
 data class UiState(
     val isShowingHomePage: Boolean = true,
-    val itemType: List<ProductItem> = emptyList()
+    val itemType: List<ProductItem> = emptyList(),
+    var isRefreshing: Boolean = false
 )

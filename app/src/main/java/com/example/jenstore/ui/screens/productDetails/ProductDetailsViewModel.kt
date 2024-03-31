@@ -1,22 +1,17 @@
 package com.example.jenstore.ui.screens.productDetails
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.jenstore.StoreApplication
 import com.example.jenstore.data.Repository
 import com.example.jenstore.data.model.ProductItem
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 data class ProductDetailsUiState(
-    val currentProduct: ProductItem? = null
+    val currentProduct: ProductItem? = null,
+    val quantity: Int = 1
 )
 
 class ProductDetailsViewModel(
@@ -26,6 +21,22 @@ class ProductDetailsViewModel(
     private val _uiState = MutableStateFlow(ProductDetailsUiState())
     val uiState: StateFlow<ProductDetailsUiState> = _uiState
 
+    val currentColor = mutableStateOf(Color.Yellow)
+
+    val currentSize = mutableStateOf("S")
+
+    val onFavourite = mutableStateOf(false)
+
+    fun onFavouriteClicked() {
+        onFavourite.value = true
+    }
+    fun onColorSelected(color: Color) {
+        currentColor.value = color
+    }
+
+    fun onSizeSelected(size: String) {
+        currentSize.value = size
+    }
 
     suspend fun productItemById(id: Int) {
         _uiState.update {
@@ -35,13 +46,4 @@ class ProductDetailsViewModel(
         }
     }
 
-    companion object {
-        val factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this [APPLICATION_KEY] as StoreApplication)
-                val repository = application.container.repository
-                ProductDetailsViewModel(repository = repository)
-            }
-        }
-    }
 }
