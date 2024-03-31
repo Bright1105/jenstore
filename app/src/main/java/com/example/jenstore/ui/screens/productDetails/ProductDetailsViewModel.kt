@@ -35,13 +35,4 @@ class ProductDetailsViewModel(
         }
     }
 
-    companion object {
-        val factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this [APPLICATION_KEY] as StoreApplication)
-                val repository = application.container.repository
-                ProductDetailsViewModel(repository = repository)
-            }
-        }
-    }
 }

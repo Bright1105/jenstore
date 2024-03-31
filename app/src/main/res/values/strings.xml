@@ -78,4 +78,5 @@
     <string name="topBarName">Jenny Store</string>
     <string name="item_image">Item Images</string>
     <string name="price1">Price:</string>
+    <string name="viewAll">View All</string>
 </resources>

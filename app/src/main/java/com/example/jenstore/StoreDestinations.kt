@@ -20,6 +20,11 @@ object Home : StoreDestinations {
     override val route: String = "home"
 }
 
+object HomeList : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.Home
+    override val route: String = "homeOne"
+}
+
 object Search : StoreDestinations {
     override val icon: ImageVector = Icons.Default.Search
     override val route: String = "Search"

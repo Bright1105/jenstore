@@ -7,6 +7,9 @@ import com.example.jenstore.data.DefaultAppContainer
 
 class StoreApplication : Application() {
 
+    /**
+     * AppContainer instance used by the rest of classes to obtain dependencies
+     */
     lateinit var container: AppContainer
 
     override fun onCreate() {

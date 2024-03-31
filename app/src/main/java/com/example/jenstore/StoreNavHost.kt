@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import com.example.jenstore.ui.screens.cart.CartScreen
 import com.example.jenstore.ui.screens.feed.FeedScreen
 import com.example.jenstore.ui.screens.home.HomeScreen
+import com.example.jenstore.ui.screens.home.HomeUiState
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsScreen
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsUiState
@@ -40,6 +41,8 @@ fun StoreNavHost(
 ) {
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
+
+
 
 
     NavHost(
@@ -68,7 +71,7 @@ fun StoreNavHost(
                 },
                 navigateToSearch = {
                     navController.navigateSingleTopTo(it.route)
-                }
+                },
             )
         }
         composable(route = Search.route) {
@@ -130,7 +133,16 @@ fun StoreNavHost(
                 type = NavType.IntType
             })
         ) {
-            ProductDetailsScreen(item = productUiState.currentProduct)
+            ProductDetailsScreen(
+                item = productUiState.currentProduct,
+                route = route,
+                onBackClicked = {
+
+                },
+                onCartClicked = {
+                    navController.navigateSingleTopTo(MyCart.route)
+                }
+            )
         }
     }
 }
@@ -140,7 +152,8 @@ fun NavHostController.navigateSingleTopTo(route: String) =
     this.navigate(route) {
 
         popUpTo(
-            this@navigateSingleTopTo.graph.findStartDestination().id
+          //  this@navigateSingleTopTo.graph.findStartDestination().id
+            this@navigateSingleTopTo.currentBackStackEntry?.destination?.route.orEmpty()
         ) {
             saveState = true
         }

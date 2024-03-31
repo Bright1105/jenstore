@@ -46,10 +46,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.ProductItem
-import com.example.jenstore.ui.screens.common.Item
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
 import kotlinx.coroutines.CoroutineScope
@@ -60,7 +60,7 @@ fun SearchScreen(
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
-    searchViewModel: SearchViewModel = viewModel(factory = SearchViewModel.factory),
+    searchViewModel: SearchViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigateToCart: (StoreDestinations) -> Unit,
     navigateToSearch: (StoreDestinations) -> Unit
 ) {
@@ -69,8 +69,6 @@ fun SearchScreen(
     val scope: CoroutineScope = rememberCoroutineScope()
 
     val searchText by searchViewModel.searchItem.collectAsState()
-
-    //val product by searchViewModel.queryItem.collectAsState(emptyList())
 
     val product by searchViewModel.product.collectAsState()
 
@@ -125,7 +123,6 @@ fun SearchScreen(
                 ItemListScreen(
                     onListBackClicked = { /*TODO*/ },
                     items = searchUiState.item,
-                    onBuyClicked = { /*TODO*/ },
                     onItemClicked = {},
                     navigateToSearch = navigateToSearch,
                     navigateToCart = navigateToCart,
@@ -152,11 +149,7 @@ private fun SearchItemList(
 ) {
     LazyColumn {
         items(items, key = { item -> item.items.id }) {
-            Item(
-                item = it,
-                onBuyClicked = onBuyClicked,
-                modifier = modifier.clickable { onItemClicked(it.items.id) }
-            )
+
         }
     }
 }

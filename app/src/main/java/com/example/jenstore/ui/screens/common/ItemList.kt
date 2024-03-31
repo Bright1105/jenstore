@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -40,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
@@ -64,7 +68,9 @@ import com.example.jenstore.R
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.ui.screens.home.HomeItemAndImage
 import com.example.jenstore.ui.screens.search.SearchUiState
+import java.util.Locale
 
 
 @Composable
@@ -74,7 +80,6 @@ fun ItemListScreen(
     onListBackClicked: () -> Unit,
     items: List<ProductItem>,
     currentRoute: StoreDestinations,
-    onBuyClicked: () -> Unit,
     onItemClicked: (Int) -> Unit,
 ) {
     Scaffold(
@@ -95,7 +100,6 @@ fun ItemListScreen(
         ) {
             ItemList(
                 items = items,
-                onBuyClicked = onBuyClicked,
                 onItemClicked = onItemClicked,
                 modifier = Modifier
                     .padding()
@@ -108,159 +112,27 @@ fun ItemListScreen(
 @Composable
 private fun ItemList(
     items: List<ProductItem>,
-    onBuyClicked: () -> Unit,
     onItemClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-    ) {
-        items(items, key = { item -> item.items.id }) {
-            Item(
-                item = it,
-                onBuyClicked = onBuyClicked,
-                modifier = modifier
-                    .clickable { onItemClicked(it.items.id) }
-            )
-        }
-    }
-}
-
-
-@Composable
-fun Item(
-    item: ProductItem,
-    onBuyClicked: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box {
-        Card(
-            shape = MaterialTheme.shapes.small,
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiaryContainer),
-            elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
-            modifier = modifier
-                .widthIn(max = dimensionResource(R.dimen.dp_350))
-                .heightIn(max = dimensionResource(R.dimen.dp_300))
-                .padding(
-                    start = dimensionResource(R.dimen.dp_25),
-                    top = dimensionResource(R.dimen.dp_30),
-                )
-        ) {
-            Column(modifier = modifier) {
-                Row {
-                    ItemImage(image = item)
-                    ItemText(item = item)
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.background)
-                ItemButton(
-                    onBuyClicked = onBuyClicked,
-                    modifier = modifier
-                        .align(alignment = Alignment.End)
-                        .padding(
-                            end = dimensionResource(R.dimen.dp_10),
-                            bottom = dimensionResource(R.dimen.dp_5),
-                            start = dimensionResource(R.dimen.dp_10),
-                            top = dimensionResource(R.dimen.dp_5)
-                        )
-                        .fillMaxWidth()
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun ItemText(
-    item: ProductItem,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .padding(dimensionResource(R.dimen.dp_10))
-    ) {
-        Text(
-            text = item.items.title,
-            style = MaterialTheme.typography.displayLarge,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = modifier
-                .padding(
-                    top = dimensionResource(R.dimen.dp_15),
-                    bottom = dimensionResource(R.dimen.dp_20)
-                )
-        )
-        Row() {
-            Text(
-                text = "Price:",
-                style = MaterialTheme.typography.displayMedium,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Bold,
-                modifier = modifier
-            )
-            Text(
-                text = item.items.price.toString(),
-                style = MaterialTheme.typography.displayMedium,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Bold,
-                modifier = modifier
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun ItemImage(
-    image: ProductItem,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        shape = MaterialTheme.shapes.small,
-        elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.dp_20)),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.tertiaryContainer),
+    LazyVerticalGrid(
+        GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_15)),
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_35)),
         modifier = modifier
             .padding(
-                top = dimensionResource(R.dimen.dp_10),
+                top = dimensionResource(R.dimen.dp_15),
                 start = dimensionResource(R.dimen.dp_10),
-                bottom = dimensionResource(R.dimen.dp_10),
-                end = dimensionResource(R.dimen.dp_15)
+                end = dimensionResource(R.dimen.dp_10),
+                bottom = dimensionResource(R.dimen.dp_15)
             )
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image.image}")
-                .crossfade(true)
-                .build(),
-            contentDescription = image.items.title,
-            placeholder = painterResource(R.drawable.loading_img),
-            contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.ic_broken_image),
-            modifier = modifier
-                .width(dimensionResource(R.dimen.dp_150))
-                .height(dimensionResource(R.dimen.dp_200))
-
-
-        )
-    }
-}
-
-
-@Composable
-private fun ItemButton(
-    onBuyClicked: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onBuyClicked,
-        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onTertiaryContainer),
-        elevation = ButtonDefaults.elevatedButtonElevation(dimensionResource(R.dimen.dp_5)),
-        modifier = modifier
-    ) {
-        Text(
-            text = stringResource(R.string.buy),
-            style = MaterialTheme.typography.labelMedium
-        )
+        items(items, key = { item -> item.items.id }) {
+            HomeItemAndImage(
+                item = it,
+                onItemClicked = onItemClicked
+            )
+        }
     }
 }
 
@@ -279,7 +151,7 @@ fun ItemListTopAppBar(
                 Text(
                     text = stringResource(R.string.store_name),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                    color = MaterialTheme.colorScheme.onBackground
                 )
         },
         navigationIcon = {
@@ -289,7 +161,7 @@ fun ItemListTopAppBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         },
@@ -300,7 +172,7 @@ fun ItemListTopAppBar(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(R.string.search),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             IconButton(
@@ -309,14 +181,15 @@ fun ItemListTopAppBar(
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
                     contentDescription = stringResource(R.string.cart),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
         },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(MaterialTheme.colorScheme.background),
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier
     )
 }
+
 
 

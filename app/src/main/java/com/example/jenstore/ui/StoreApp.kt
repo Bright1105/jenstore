@@ -1,6 +1,5 @@
-package com.example.jenstore
+package com.example.jenstore.ui
 
-import androidx.compose.foundation.border
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -14,10 +13,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.jenstore.AppViewModelProvider
+import com.example.jenstore.Home
+import com.example.jenstore.R
+import com.example.jenstore.StoreDestinations
+import com.example.jenstore.StoreNavHost
+import com.example.jenstore.navigateSingleTopTo
+import com.example.jenstore.storeTabRowBottomBar
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
@@ -25,8 +30,8 @@ import com.example.jenstore.ui.theme.JenstoreTheme
 
 @Composable
 fun StoreApp() {
-    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
-    val productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = ProductDetailsViewModel.factory)
+    val homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
     
     JenstoreTheme {
         val navController = rememberNavController()
@@ -64,7 +69,7 @@ fun StoreTopAppBar(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Serif,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                color = MaterialTheme.colorScheme.onBackground
             )
         },
         actions = {
@@ -74,11 +79,11 @@ fun StoreTopAppBar(
                 Icon(
                     imageVector = screen.icon,
                     contentDescription = screen.route,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier
     )
 }
