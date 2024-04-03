@@ -71,7 +71,7 @@ private fun StoreTab(
     selected: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val color = MaterialTheme.colorScheme.onTertiaryContainer
+    val color = MaterialTheme.colorScheme.onBackground
     val durationMillis = if (selected) TabFadeInAnimationDuration else TabFadeOutAnimationDuration
     val animSpec = remember {
         tween<Color>(
