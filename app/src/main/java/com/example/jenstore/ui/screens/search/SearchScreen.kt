@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -39,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -52,6 +55,8 @@ import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
+import com.example.jenstore.ui.screens.home.HomeItemAndImage
+import com.example.jenstore.ui.screens.home.HomeViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -62,7 +67,8 @@ fun SearchScreen(
     currentScreen: StoreDestinations,
     searchViewModel: SearchViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigateToCart: (StoreDestinations) -> Unit,
-    navigateToSearch: (StoreDestinations) -> Unit
+    navigateToSearch: (StoreDestinations) -> Unit,
+    homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val searchUiState by searchViewModel.uiState.collectAsState()
 
@@ -72,21 +78,48 @@ fun SearchScreen(
 
     val product by searchViewModel.product.collectAsState()
 
+    val homeUiState by homeViewModel.uiState.collectAsState()
+
     Scaffold(
 
         topBar = {
-                 SearchInputFiled(
-                     value = searchText,
-                     onValueChange = searchViewModel::searchQuery,
-                     searchUiState = searchUiState,
-                     onSearchBackClicked = {
-                         searchViewModel.onBackClicked()
+                 if (homeUiState.isShowingHomePage) {
+                     SearchInputFiled(
+                         value = searchText,
+                         onValueChange = searchViewModel::searchQuery,
+                         searchUiState = searchUiState,
+                         onSearchBackClicked = {
+                             searchViewModel.onBackClicked()
+                         },
+                         modifier = Modifier
+                             .height(dimensionResource(R.dimen.dp_70))
+                             .padding(
+                                 top = dimensionResource(R.dimen.dp_20),
+                                 start = dimensionResource(R.dimen.dp_10),
+                                 end = dimensionResource(R.dimen.dp_10)
+                             )
+
+                     )
+                 } else {
+                     IconButton(
+                         onClick = {
+                             homeViewModel.listBackClicked()
+                         },
+                         modifier = Modifier
+                             .height(dimensionResource(R.dimen.dp_70))
+                     ) {
+                         Icon(
+                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                             contentDescription = stringResource(R.string.back),
+                             tint = MaterialTheme.colorScheme.onTertiary,
+                             modifier = Modifier
+                         )
                      }
-                 )
+                 }
         },
 
         bottomBar = {
-            if (searchUiState.isShowingSearchHome) {
+            if (homeUiState.isShowingHomePage) {
                 StoreTabRow(
                     allScreensBar = allScreen,
                     onTabSelected = onTabClicked,
@@ -94,47 +127,54 @@ fun SearchScreen(
                 )
             }
         },
+
+        containerColor = if (homeUiState.isShowingHomePage) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onTertiaryContainer
     ) {
-        Column(modifier = Modifier.padding(it)) {
-            if (searchUiState.isShowingSearchHome && !searchUiState.searching) {
+        Column(
+            modifier = Modifier
+                .padding(it)
+                .verticalScroll(rememberScrollState())
+        ) {
+            if (homeUiState.isShowingHomePage) {
                 SearchCategories(
                     onHairClicked = {
                         scope.launch {
-                            searchViewModel.onHairClicked()
+                            homeViewModel.seeHairAllClicked()
                         }
                     },
                     onShoeClicked = {
                         scope.launch {
-                            searchViewModel.onShoeClicked()
+                            homeViewModel.seeShoeALlClicked()
                         }
                     },
                     onBagClicked = {
                         scope.launch {
-                            searchViewModel.onBagClicked()
+                            homeViewModel.seeBagALlClicked()
                         }
                     },
                     onClothesClicked = {
                         scope.launch {
-                            searchViewModel.onClotheClicked()
+                            homeViewModel.seeClotheALlClicked()
                         }
                     }
                 )
-            } else if (!searchUiState.isShowingSearchHome) {
+            } else  {
                 ItemListScreen(
                     onListBackClicked = { /*TODO*/ },
-                    items = searchUiState.item,
+                    items = homeUiState.itemType,
                     onItemClicked = {},
                     navigateToSearch = navigateToSearch,
                     navigateToCart = navigateToCart,
                     currentRoute = currentScreen
                 )
-            } else {
-                SearchItemList(
-                    items = product,
-                    onItemClicked = {},
-                    onBuyClicked = { /*TODO*/ }
-                )
             }
+                //else {
+            //                SearchItemList(
+            //                    items = product,
+            //                    onItemClicked = {},
+            //                    onBuyClicked = { /*TODO*/ }
+            //                )
+            //            }
         }
     }
 }
@@ -148,8 +188,11 @@ private fun SearchItemList(
     modifier: Modifier = Modifier
 ) {
     LazyColumn {
-        items(items, key = { item -> item.items.id }) {
-
+        items(items, key = { item -> item.items.id }) { item ->
+            HomeItemAndImage(
+                item = item,
+                onItemClicked = { onItemClicked(item.items.id) }
+            )
         }
     }
 }
@@ -164,11 +207,11 @@ private fun SearchCategories(
     Column {
         Text(
             text = stringResource(R.string.categories),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier
                 .padding(
-                    top = dimensionResource(R.dimen.dp_25),
+                    top = dimensionResource(R.dimen.dp_50),
                     bottom = dimensionResource(R.dimen.dp_15),
                     start = dimensionResource(R.dimen.dp_10)
                 )
@@ -193,30 +236,26 @@ private fun SearchCategoriesInfo(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Row {
-            SearchTextAndImage(
-                image = R.drawable.hair1,
-                text = R.string.hair,
-                onClicked = onHairClicked
-            )
-            SearchTextAndImage(
-                image = R.drawable.bag1,
-                text = R.string.bags,
-                onClicked = onBagClicked
-            )
-        }
-        Row {
-            SearchTextAndImage(
-                image = R.drawable.shoes1,
-                text = R.string.shoes,
-                onClicked = onShoeClicked
-            )
-            SearchTextAndImage(
-                image = R.drawable.clothes4,
-                text = R.string.clothes,
-                onClicked = onClotheClicked
-            )
-        }
+        SearchTextAndImage(
+            image = R.drawable.hair1,
+            text = R.string.hair,
+            onClicked = onHairClicked
+        )
+        SearchTextAndImage(
+            image = R.drawable.bag1,
+            text = R.string.bags,
+            onClicked = onBagClicked
+        )
+        SearchTextAndImage(
+            image = R.drawable.shoes1,
+            text = R.string.shoes,
+            onClicked = onShoeClicked
+        )
+        SearchTextAndImage(
+            image = R.drawable.clothes4,
+            text = R.string.clothes,
+            onClicked = onClotheClicked
+        )
     }
 }
 
@@ -233,8 +272,8 @@ fun SearchTextAndImage(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         onClick = onClicked,
         modifier = modifier
-            .width(dimensionResource(R.dimen.dp_190))
-            .padding(dimensionResource(R.dimen.dp_5))
+            .fillMaxWidth()
+            .padding(dimensionResource(R.dimen.dp_10))
     ) {
         Row {
             SearchText(
@@ -278,10 +317,10 @@ private fun SearchText(
 ) {
     Text(
         text = stringResource(text),
-        style = MaterialTheme.typography.displayMedium,
+        style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onTertiary,
         modifier = modifier
-            .padding(start = dimensionResource(R.dimen.dp_5))
+            .padding(start = dimensionResource(R.dimen.dp_10))
             .padding(end = dimensionResource(R.dimen.dp_5))
     )
 }
@@ -300,23 +339,11 @@ fun SearchInputFiled(
         value = value,
         onValueChange = onValueChange,
         leadingIcon = {
-                if (searchUiState.searching) {
-                    IconButton(
-                        onClick = onSearchBackClicked
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search),
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = stringResource(R.string.search),
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
         },
         shape = ShapeDefaults.Small,
         placeholder = {
@@ -340,5 +367,6 @@ fun SearchInputFiled(
             .height(dimensionResource(R.dimen.dp_50))
             .fillMaxWidth()
             .padding(dimensionResource(R.dimen.dp_5))
+
     )
 }

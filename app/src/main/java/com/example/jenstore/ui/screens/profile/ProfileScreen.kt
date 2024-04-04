@@ -47,7 +47,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.jenstore.Account
+import com.example.jenstore.Address
+import com.example.jenstore.Inbox
+import com.example.jenstore.MyCart
+import com.example.jenstore.Notifications
+import com.example.jenstore.Orders
+import com.example.jenstore.Promotions
 import com.example.jenstore.R
+import com.example.jenstore.SaveItems
+import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.ui.screens.common.StoreTabRow
 
@@ -56,14 +65,23 @@ fun ProfileScreen(
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
+    onOrderClicked: (StoreDestinations) -> Unit,
+    onInboxClicked: (StoreDestinations) -> Unit,
+    onNotifyClicked: (StoreDestinations) -> Unit,
+    onSavedItemsClicked: (StoreDestinations) -> Unit,
+    onPromotionClicked: (StoreDestinations) -> Unit,
+    onAccountClicked: (StoreDestinations) -> Unit,
+    onAddressClicked: (StoreDestinations) -> Unit,
+    onCartClicked: (StoreDestinations) -> Unit,
+    onSearchClicked: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
 
         topBar = {
                  ProfileTopAppBar(
-                     onCartClicked = { /*TODO*/ },
-                     onSearchClicked = { /*TODO*/ }
+                     onCartClicked = onCartClicked,
+                     onSearchClicked = onSearchClicked
                  )
         },
         bottomBar = {
@@ -80,16 +98,16 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             ProfileOrdersInfo(
-                onOrderClicked = { /*TODO*/ },
-                onInboxClicked = { /*TODO*/ },
-                onNotifyClicked = { /*TODO*/ },
-                onSavedItemsClicked = {},
-                onPromotionClicked = {}
+                onOrderClicked = onOrderClicked,
+                onInboxClicked = onInboxClicked,
+                onNotifyClicked = onNotifyClicked,
+                onSavedItemsClicked = onSavedItemsClicked,
+                onPromotionClicked = onPromotionClicked
             )
             Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_15)))
             ProfileAccountSetting(
-                onAccountClicked = { /*TODO*/ },
-                onAddressClicked = { /*TODO*/ },
+                onAccountClicked = onAccountClicked,
+                onAddressClicked = onAddressClicked,
                 onLogOutClicked = {}
             )
         }
@@ -99,8 +117,8 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileAccountSetting(
-    onAccountClicked: () -> Unit,
-    onAddressClicked: () -> Unit,
+    onAccountClicked: (StoreDestinations) -> Unit,
+    onAddressClicked: (StoreDestinations) -> Unit,
     onLogOutClicked: () -> Unit
 ) {
     Column(
@@ -125,13 +143,13 @@ private fun ProfileAccountSetting(
                 text = R.string.account,
                 imageVector = Icons.Outlined.AccountCircle,
                 description = R.string.account,
-                onValueClicked = onAccountClicked
+                onValueClicked = { onAccountClicked(Account) }
             )
             ProfileAccountIconAndInfo(
                 text = R.string.address,
                 imageVector = Icons.Outlined.LocationOn,
                 description = R.string.address,
-                onValueClicked = onAddressClicked
+                onValueClicked = { onAddressClicked(Address) }
             )
         }
         TextButton(
@@ -149,11 +167,11 @@ private fun ProfileAccountSetting(
 
 @Composable
 private fun ProfileOrdersInfo(
-    onOrderClicked: () -> Unit,
-    onInboxClicked: () -> Unit,
-    onNotifyClicked: () -> Unit,
-    onSavedItemsClicked: () -> Unit,
-    onPromotionClicked: () -> Unit,
+    onOrderClicked: (StoreDestinations) -> Unit,
+    onInboxClicked: (StoreDestinations) -> Unit,
+    onNotifyClicked: (StoreDestinations) -> Unit,
+    onSavedItemsClicked: (StoreDestinations) -> Unit,
+    onPromotionClicked: (StoreDestinations) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -178,31 +196,31 @@ private fun ProfileOrdersInfo(
                 text = R.string.orders,
                 imageVector = Icons.AutoMirrored.Outlined.List,
                 description = R.string.orders,
-                onValueClicked = onOrderClicked,
+                onValueClicked = { onOrderClicked(Orders) },
             )
             ProfileAccountIconAndInfo(
                 text = R.string.inbox,
                 imageVector = Icons.Outlined.Email,
                 description = R.string.inbox,
-                onValueClicked = onInboxClicked
+                onValueClicked = { onInboxClicked(Inbox) }
             )
             ProfileAccountIconAndInfo(
                 text = R.string.notification,
                 imageVector = Icons.Outlined.Notifications,
                 description = R.string.notification,
-                onValueClicked = onNotifyClicked
+                onValueClicked = { onNotifyClicked(Notifications) }
             )
             ProfileAccountIconAndInfo(
                 text = R.string.savedItem,
                 imageVector = Icons.Outlined.FavoriteBorder,
                 description = R.string.savedItem,
-                onValueClicked = onSavedItemsClicked
+                onValueClicked = { onSavedItemsClicked(SaveItems) }
             )
             ProfileAccountIconAndInfo(
                 text = R.string.promotion,
                 imageVector = Icons.Outlined.DateRange,
                 description = R.string.promotion,
-                onValueClicked = onPromotionClicked
+                onValueClicked = { onPromotionClicked(Promotions) }
             )
         }
     }
@@ -249,8 +267,8 @@ private fun ProfileAccountIconAndInfo(
 
 @Composable
 private fun ProfileTopAppBar(
-    onCartClicked: () -> Unit,
-    onSearchClicked: () -> Unit,
+    onCartClicked: (StoreDestinations) -> Unit,
+    onSearchClicked: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -275,7 +293,7 @@ private fun ProfileTopAppBar(
                     )
             )
             IconButton(
-                onClick = onSearchClicked
+                onClick = { onSearchClicked(Search) }
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,
@@ -283,7 +301,7 @@ private fun ProfileTopAppBar(
                 )
             }
             IconButton(
-                onClick = onCartClicked
+                onClick = { onCartClicked(MyCart) }
             ) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,

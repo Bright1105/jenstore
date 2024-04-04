@@ -42,5 +42,6 @@
     <dimen name="dp_2">2dp</dimen>
     <dimen name="dp_56">56.dp</dimen>
     <dimen name="dp_3">3.dp</dimen>
+    <dimen name="dp_70">70.dp</dimen>
 
 </resources>

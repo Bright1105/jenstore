@@ -2,8 +2,14 @@ package com.example.jenstore
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -85,10 +91,38 @@ object ProductDetails : StoreDestinations {
 }
 
 object Orders : StoreDestinations {
-    override val icon: ImageVector
-        get() = TODO("Not yet implemented")
-    override val route: String
-        get() = TODO("Not yet implemented")
+    override val icon: ImageVector = Icons.Default.Check
+    override val route: String = "orders"
+}
+
+object Inbox : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.Person
+    override val route: String = "Inbox"
+}
+
+object Notifications : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.Notifications
+    override val route: String = "Notification"
+}
+
+object SaveItems : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.Favorite
+    override val route: String = "saveItems"
+}
+
+object Promotions : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.DateRange
+    override val route: String = "promotion"
+}
+
+object Account : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.AccountCircle
+    override val route: String = "account"
+}
+
+object Address : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.LocationOn
+    override val route: String = "address"
 }
 
 

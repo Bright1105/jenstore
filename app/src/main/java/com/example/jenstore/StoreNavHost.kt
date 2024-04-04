@@ -22,6 +22,13 @@ import com.example.jenstore.ui.screens.productDetails.ProductDetailsScreen
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsUiState
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.screens.profile.ProfileScreen
+import com.example.jenstore.ui.screens.profile.account.AccountScreen
+import com.example.jenstore.ui.screens.profile.account.address.AddressScreen
+import com.example.jenstore.ui.screens.profile.account.inbox.InboxScreen
+import com.example.jenstore.ui.screens.profile.account.notification.NotificationsScreen
+import com.example.jenstore.ui.screens.profile.account.orders.OrdersScreen
+import com.example.jenstore.ui.screens.profile.account.promotion.PromotionScreen
+import com.example.jenstore.ui.screens.profile.account.saveitems.SaveItemsScreen
 import com.example.jenstore.ui.screens.search.SearchScreen
 import com.example.jenstore.ui.screens.search.SearchViewModel
 import com.example.jenstore.ui.screens.setting.SettingScreen
@@ -42,8 +49,6 @@ fun StoreNavHost(
 ) {
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
-
-
 
 
     NavHost(
@@ -99,7 +104,34 @@ fun StoreNavHost(
             ProfileScreen(
                 allScreen = allScreen,
                 onTabClicked = onTabClicked,
-                currentScreen = route
+                currentScreen = route,
+                onCartClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onSearchClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onOrderClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onInboxClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onNotifyClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onSavedItemsClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onPromotionClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onAccountClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                },
+                onAddressClicked = {
+                    navController.navigateSingleTopTo(it.route)
+                }
             )
         }
         composable(route = ProfileAccount.route) {
@@ -144,6 +176,27 @@ fun StoreNavHost(
                     navController.navigateSingleTopTo(MyCart.route)
                 },
             )
+        }
+        composable(route = Orders.route) {
+            OrdersScreen()
+        }
+        composable(route = Inbox.route) {
+            InboxScreen()
+        }
+        composable(route = Notifications.route) {
+            NotificationsScreen()
+        }
+        composable(route = SaveItems.route) {
+            SaveItemsScreen()
+        }
+        composable(route = Promotions.route) {
+            PromotionScreen()
+        }
+        composable(route = Account.route) {
+            AccountScreen()
+        }
+        composable(route = Address.route) {
+            AddressScreen()
         }
     }
 }
