@@ -3,35 +3,29 @@ package com.example.jenstore.ui.screens.productDetails
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +37,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,20 +50,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.jenstore.AppViewModelProvider
+import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.ui.screens.cart.CartProductQ
+import com.example.jenstore.ui.screens.cart.JenStoreDivider
 import com.example.jenstore.ui.theme.JenstoreTheme
-import com.example.jenstore.ui.theme.Shapes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 
@@ -78,14 +80,26 @@ fun ProductDetailsScreen(
     onCartClicked: (StoreDestinations) -> Unit,
     productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val scope: CoroutineScope = rememberCoroutineScope()
+    val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
+
     Column {
         item?.let {
             ProductDetails(
-                count = 1,
-                decreaseItemCount = { /*TODO*/ },
-                increaseItemCount = { /*TODO*/ },
+                count = productDetailsViewModel.countItem.intValue,
+                decreaseItemCount = {
+                    productDetailsViewModel.decreaseCountItem()
+                },
+                increaseItemCount = {
+                    productDetailsViewModel.increaseCountItem()
+                },
                 item = it,
-                onAddToCartClicked = {},
+                onAddToCartClicked = {
+                         scope.launch {
+                             productDetailsViewModel.onAddToCartClicked(it)
+                             onCartClicked(MyCart)
+                         }
+                },
                 onBackClicked = onBackClicked,
                 onCartClicked = onCartClicked,
                 onFavouriteClicked = {
@@ -94,14 +108,7 @@ fun ProductDetailsScreen(
                 },
                 onFavourite = productDetailsViewModel.onFavourite.value,
                 route = route,
-                onColorSelected = { color ->
-                      productDetailsViewModel.onColorSelected(color)
-                },
-                currentColor = productDetailsViewModel.currentColor.value,
-                selectedSize = productDetailsViewModel.currentSize.value,
-                onSizeSelected = { size ->
-                    productDetailsViewModel.onSizeSelected(size)
-                }
+                totalPrice = productDetailsViewModel.countItem.intValue,
             )
         }
     }
@@ -114,15 +121,12 @@ fun ProductDetails(
     increaseItemCount: () -> Unit,
     item: ProductItem,
     route: StoreDestinations,
-    onAddToCartClicked: () -> Unit,
+    onAddToCartClicked: (ProductItem) -> Unit,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onFavouriteClicked: () -> Unit,
     onFavourite: Boolean,
-    onColorSelected: (Color) -> Unit,
-    selectedSize: String,
-    onSizeSelected: (String) -> Unit,
-    currentColor: Color,
+    totalPrice: Int,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -139,6 +143,7 @@ fun ProductDetails(
         bottomBar = {
           ProductDetailsBottomBar(
               item = item,
+              totalPrice = totalPrice,
               onAddToCartClicked
           )
         },
@@ -148,21 +153,15 @@ fun ProductDetails(
                 .padding(it)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_10)))
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             ProductDetailsTextAndItem(
                 item = item,
                 count = count,
                 onDecreaseClicked = decreaseItemCount,
                 onInCreaseClicked = increaseItemCount
             )
-            Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_10)))
-            ProductDetailsClotheSize(
-                allSize = size,
-                selectedSize = selectedSize,
-                onSizeSelected = onSizeSelected,
-                onColorSelected,
-                currentColor,
-            )
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
+            JenStoreDivider()
             ProductDetailsDescription(item = item)
         }
     }
@@ -175,176 +174,21 @@ private fun ProductDetailsDescription(
 ) {
     Column {
         Text(
-            text = stringResource(R.string.description),
+            text = stringResource(R.string.details),
             style = MaterialTheme.typography.titleMedium,
-            textDecoration = TextDecoration.Underline,
-            modifier = modifier
+            modifier = Modifier
                 .padding(start = dimensionResource(R.dimen.dp_10))
 
         )
         Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_15)))
         Text(
-            text = item.items.description,
+            text = item.description,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = modifier
+            modifier = Modifier
                 .padding(start = dimensionResource(R.dimen.dp_15))
         )
     }
 }
-
-
-
-val size: List<String> = listOf(
-    "S",
-    "M",
-    "L",
-    "XL",
-    "XXL"
-)
-
-
-@Composable
-private fun ProductDetailsClotheSize(
-    allSize: List<String>,
-    selectedSize: String,
-    onSizeSelected: (String) -> Unit,
-    onColorSelected: (Color) -> Unit,
-    currentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-    ) {
-        Text(
-            text = stringResource(R.string.size),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = modifier
-                .padding(
-                    top = dimensionResource(R.dimen.dp_15),
-                    start = dimensionResource(R.dimen.dp_15),
-                    bottom = dimensionResource(R.dimen.dp_5)
-                )
-        )
-        Row(
-            modifier = modifier
-                .selectableGroup()
-                .padding(
-                    start = dimensionResource(R.dimen.dp_10),
-                )
-        ) {
-           allSize.forEach {
-               ProductClotheSizeSelector(
-                   text = it,
-                   selectedSize = selectedSize == it,
-                   onSizeSelected = { onSizeSelected(it) },
-                   modifier = modifier
-               )
-           }
-            ProductColorColumn(
-                allColor = color,
-                onColorSelected = onColorSelected,
-                currentColor = currentColor,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProductClotheSizeSelector(
-    text: String,
-    selectedSize: Boolean,
-    onSizeSelected: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .selectable(
-                selected = selectedSize,
-                onClick = onSizeSelected
-            )
-            .padding(
-                end = dimensionResource(R.dimen.dp_8)
-            )
-    ) {
-        Button(
-            onClick = onSizeSelected,
-            shape = CircleShape,
-            border = BorderStroke(2.dp, color = if (selectedSize) Color.Blue else MaterialTheme.colorScheme.outlineVariant),
-            modifier = modifier
-                .width(55.dp)
-                .height(40.dp)
-        ) {
-            Text(
-                text,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProductColorColumn(
-    allColor: List<Color>,
-    onColorSelected: (Color) -> Unit,
-    currentColor: Color
-) {
-    Column(
-        Modifier
-            .selectableGroup()
-    ) {
-        allColor.forEach {
-            ProductColor(
-                text = "O",
-                onSelected = { onColorSelected(it) },
-                selected = currentColor == it,
-                color = it,
-            )
-        }
-    }
-}
-
-val color: List<Color> = listOf(
-    Color.Yellow,
-    Color.Black,
-    Color.DarkGray,
-    Color.Green
-)
-
-@Composable
-private fun ProductColor(
-    text: String,
-    onSelected: () -> Unit,
-    selected: Boolean,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .selectable(
-                selected = selected,
-                onClick = onSelected
-            )
-            .padding(
-                bottom = dimensionResource(R.dimen.dp_3),
-            )
-    ) {
-        Text(
-            text = text,
-            color = color,
-            modifier = modifier
-                .background(color, shape = CircleShape)
-                .border(
-                    2.dp,
-                    color = if (selected) Color.Blue else MaterialTheme.colorScheme.outlineVariant,
-                    shape = CircleShape
-                )
-                .width(30.dp)
-                .height(30.dp)
-
-        )
-    }
-}
-
 
 
 // try using column in the box
@@ -363,10 +207,10 @@ private fun ProductDetailsTextAndItem(
     ) {
         Column(modifier = modifier) {
             Text(
-                text = item.items.title.uppercase(),
+                text = item.title.uppercase(),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = modifier
+                modifier = Modifier
                     .padding(
                         top = dimensionResource(R.dimen.dp_15),
                         start = dimensionResource(R.dimen.dp_20),
@@ -375,10 +219,10 @@ private fun ProductDetailsTextAndItem(
             )
             Row {
                 Text(
-                    text = item.items.brand.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                    text = item.brand.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = modifier
+                    modifier = Modifier
                         .padding(
                             start = dimensionResource(R.dimen.dp_20),
                             bottom = dimensionResource(R.dimen.dp_5)
@@ -389,18 +233,20 @@ private fun ProductDetailsTextAndItem(
                     count = count,
                     onDecreaseClicked = onDecreaseClicked,
                     onInCreaseClicked = onInCreaseClicked,
-                    modifier = modifier
+                    isButtonEnable = !(count >= item.itemAvailable || count <= item.itemAvailable),  //,/count >= item.items.itemAvailable,
+                    modifier = Modifier
                         .padding(
                             bottom = dimensionResource(R.dimen.dp_5),
                         )
                 )
+                // set the search screen
             }
             Row {
                 Text(
                     text = "(50 Likes)",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = modifier
+                    modifier = Modifier
                         .weight(1f)
                         .padding(
                             start = dimensionResource(R.dimen.dp_20)
@@ -409,16 +255,16 @@ private fun ProductDetailsTextAndItem(
                 Text(
                     text = stringResource(R.string.available),
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = modifier
+                    modifier = Modifier
                         .padding(
                             end = dimensionResource(R.dimen.dp_20),
                         )
                 )
                 Text(
-                    text = "20",
+                    text = item.itemAvailable.toString(),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = modifier
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
                         .padding(
                             top = dimensionResource(R.dimen.dp_5),
                             end = dimensionResource(R.dimen.dp_20)
@@ -430,18 +276,18 @@ private fun ProductDetailsTextAndItem(
                     painter = painterResource(R.drawable.naira_sign),
                     contentDescription = stringResource(R.string.naira),
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = modifier
+                    modifier = Modifier
                         .width(dimensionResource(R.dimen.dp_35))
                         .height(dimensionResource(R.dimen.dp_20))
                         .padding(start = dimensionResource(R.dimen.dp_20))
 
                 )
                 Text(
-                    text = item.items.price.toString(),
+                    text = item.price.toString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     fontWeight = FontWeight.Bold,
-                    modifier = modifier
+                    modifier = Modifier
 
                 )
 
@@ -455,56 +301,45 @@ private fun ProductQualityIncrease(
     count: Int,
     onInCreaseClicked: () -> Unit,
     onDecreaseClicked: () -> Unit,
+    isButtonEnable: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        shape = MaterialTheme.shapes.small,
-        elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
-        modifier = modifier
-            .padding(
-                end = dimensionResource(R.dimen.dp_10)
-            )
+    Row(
+        modifier = Modifier
+            .padding(horizontal = dimensionResource(R.dimen.dp_15))
     ) {
-        Row {
-            IconButtonQ(
-                onValueCHanged = onDecreaseClicked,
-                painter = painterResource(R.drawable.minus),
-                contentDescription = R.string.decrease,
-                buttonEnable = true,
+        CartProductQ(
+            onClicked = onDecreaseClicked,
+            imageVector = Icons.Default.Remove,
+            contentDescription = R.string.decrease,
+            isButtonEnable = isButtonEnable,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+        )
+        Crossfade(
+            targetState = count,
+            animationSpec = TweenSpec(9, 5, LinearOutSlowInEasing),
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+        ) {
+            Text(
+                text = "$it",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
                 modifier = modifier
-                    .padding(
-                        start = dimensionResource(R.dimen.dp_15),
-                        top = dimensionResource(R.dimen.dp_5),
-                        end = dimensionResource(R.dimen.dp_5)
-                    )
-            )
-            Crossfade(
-                targetState = count,
-                //  animationSpec = TweenSpec(2, 1, FastOutLinearInEasing)
-            ) {
-                Text(
-                    text = "$it",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = modifier
-                        .padding(
-                            start = dimensionResource(R.dimen.dp_5),
-                        )
-                )
-            }
-            IconButtonQ(
-                onValueCHanged = onInCreaseClicked,
-                painter = painterResource(R.drawable.add),
-                contentDescription = R.string.increase,
-                buttonEnable = true,
-                modifier = modifier
-                    .padding(
-                        top = dimensionResource(R.dimen.dp_5),
-                        end = dimensionResource(R.dimen.dp_15),
-                        start = dimensionResource(R.dimen.dp_5)
-                    )
+                    .widthIn(min = 24.dp)
             )
         }
+        CartProductQ(
+            onClicked = onInCreaseClicked,
+            imageVector = Icons.Default.Add,
+            contentDescription = R.string.increase,
+            isButtonEnable = isButtonEnable,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
     }
 }
 
@@ -512,8 +347,8 @@ private fun ProductQualityIncrease(
 private fun IconButtonQ(
     onValueCHanged: () -> Unit,
     painter: Painter,
-    @StringRes contentDescription: Int,
     buttonEnable: Boolean,
+    @StringRes contentDescription: Int,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -556,7 +391,7 @@ private fun ProductDetailsTopBarImage(
                 .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image.image}")
                 .crossfade(true)
                 .build(),
-            contentDescription = image.items.title,
+            contentDescription = image.title,
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.ic_broken_image),
             placeholder = painterResource(R.drawable.loading_img),
@@ -643,7 +478,8 @@ private fun IconButtonBar(
 @Composable
 private fun ProductDetailsBottomBar(
     item: ProductItem,
-    onAddToCartClicked: () -> Unit,
+    totalPrice: Int,
+    onAddToCartClicked: (ProductItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row {
@@ -673,7 +509,7 @@ private fun ProductDetailsBottomBar(
                             .size(dimensionResource(R.dimen.dp_15))
                     )
                     Text(
-                        text = item.items.price.toString(),
+                        text = item.price.times(totalPrice).toString(),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -681,7 +517,7 @@ private fun ProductDetailsBottomBar(
             }
         }
         Button(
-            onClick = onAddToCartClicked,
+            onClick = { onAddToCartClicked(item) },
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onBackground),
             modifier = modifier
                 .width(dimensionResource(R.dimen.dp_200))

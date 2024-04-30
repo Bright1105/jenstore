@@ -5,10 +5,10 @@
     <string name="search">search</string>
     <string name="cart">cart</string>
     <string name="profile">profile</string>
-    <string name="hair">Hairs</string>
-    <string name="bags">Bags</string>
-    <string name="clothes">Clothes</string>
-    <string name="shoes">Shoes</string>
+    <string name="hair">hair</string>
+    <string name="bags">bag</string>
+    <string name="clothes">clothe</string>
+    <string name="shoes">shoe</string>
     <string name="see">SEE ALL</string>
     <string name="buy">BUY NOW</string>
     <string name="back">Back</string>
@@ -52,7 +52,7 @@
     <string name="user">Users</string>
     <string name="name">Item Name</string>
     <string name="price">Price</string>
-    <string name="details">Item Details</string>
+    <string name="details">Details</string>
     <string name="brands">Item Brand</string>
     <string name="numberOfItemAvailable">item available</string>
     <string name="itemType">Item type</string>
@@ -94,4 +94,11 @@
     <string name="address">Address</string>
     <string name="logOut">LOGOUT</string>
     <string name="promotion">Promotions</string>
+    <string name="remove">remove</string>
+    <plurals name="cart_order_count">
+        <item quantity="one">%1d item</item>
+        <item quantity="other">%1d items</item>
+    </plurals>
+    <string name="cart_order_header">Order (%1s)</string>
+    <string name="delete">delete</string>
 </resources>

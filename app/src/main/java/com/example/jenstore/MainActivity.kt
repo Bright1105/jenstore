@@ -25,23 +25,22 @@ import com.example.jenstore.ui.theme.JenstoreTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
         enableEdgeToEdge(
             // This app is only ever in dark mode, so hard code detectDarkMode to true.
-            SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { true }),
+            // SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { true }),
         )
-        setContent {
-            JenstoreTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    StoreApp()
-                }
-            }
-        }
+        super.onCreate(savedInstanceState)
+        setContent { StoreApp() }
+
+        //JenstoreTheme {
+        //                // A surface container using the 'background' color from the theme
+        //                Surface(
+        //                    modifier = Modifier.fillMaxSize(),
+        //                    color = MaterialTheme.colorScheme.background
+        //                ) {
+        //                    StoreApp()
+        //                }
+        //            }
     }
 }
 

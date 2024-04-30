@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.jenstore.ui.screens.cart.CartScreen
 import com.example.jenstore.ui.screens.feed.FeedScreen
+import com.example.jenstore.ui.screens.feed.FeedViewModel
 import com.example.jenstore.ui.screens.home.HomeScreen
 import com.example.jenstore.ui.screens.home.HomeUiState
 import com.example.jenstore.ui.screens.home.HomeViewModel
@@ -45,6 +46,7 @@ fun StoreNavHost(
     onTabClicked: (StoreDestinations) -> Unit,
     homeViewModel: HomeViewModel,
     productDetailsViewModel: ProductDetailsViewModel,
+    feedViewModel: FeedViewModel,
     modifier: Modifier = Modifier
 ) {
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
@@ -90,6 +92,12 @@ fun StoreNavHost(
                 },
                 navigateToSearch = {
                     navController.navigateSingleTopTo(it.route)
+                },
+                onItemClicked = {
+                    scope.launch {
+                        productDetailsViewModel.productItemById(it)
+                        navController.navigate("${ProductDetails.route}/$it")
+                    }
                 }
             )
         }
@@ -97,7 +105,7 @@ fun StoreNavHost(
             CartScreen(
                 allScreen = allScreen,
                 onTabClicked = onTabClicked,
-                currentScreen = route
+                currentScreen = route,
             )
         }
         composable(route = Profile.route) {
@@ -148,7 +156,9 @@ fun StoreNavHost(
             FeedScreen(
                 allScreen = allScreen,
                 onTabClicked = onTabClicked,
-                currentScreen = route
+                currentScreen = route,
+                feedUiState = feedViewModel.feedUiState,
+                viewModel = feedViewModel
             )
         }
         composable(route = Login.route) {

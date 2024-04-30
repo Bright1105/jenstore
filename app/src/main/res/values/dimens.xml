@@ -43,5 +43,7 @@
     <dimen name="dp_56">56.dp</dimen>
     <dimen name="dp_3">3.dp</dimen>
     <dimen name="dp_70">70.dp</dimen>
+    <dimen name="dp_18">18.dp</dimen>
+    <dimen name="dp_90">90.dp</dimen>
 
 </resources>

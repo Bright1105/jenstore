@@ -41,12 +41,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.jenstore.Account
 import com.example.jenstore.Address
 import com.example.jenstore.Inbox
@@ -58,6 +61,7 @@ import com.example.jenstore.R
 import com.example.jenstore.SaveItems
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
+import com.example.jenstore.ui.screens.cart.JenStoreDivider
 import com.example.jenstore.ui.screens.common.StoreTabRow
 
 @Composable
@@ -242,7 +246,8 @@ private fun ProfileAccountIconAndInfo(
         Icon(
             imageVector = imageVector,
             contentDescription = stringResource(description),
-            modifier = modifier
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
                 .padding(
                     start = dimensionResource(R.dimen.dp_10),
                     end = dimensionResource(R.dimen.dp_5)
@@ -251,14 +256,15 @@ private fun ProfileAccountIconAndInfo(
         Text(
             text = stringResource(text),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = modifier
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier
                 .weight(1f)
         )
         Icon(
             imageVector = Icons.AutoMirrored.Default.ArrowForward,
             contentDescription = stringResource(R.string.arrowForward),
-            modifier = modifier
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
                 .padding(end = dimensionResource(R.dimen.dp_10))
         )
     }
@@ -274,7 +280,7 @@ private fun ProfileTopAppBar(
     Column(
         modifier = modifier
             .height(dimensionResource(R.dimen.dp_150))
-            .background(MaterialTheme.colorScheme.outlineVariant)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Row(
             modifier = modifier
@@ -286,7 +292,7 @@ private fun ProfileTopAppBar(
                 text = stringResource(R.string.account),
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = modifier
+                modifier = Modifier
                     .weight(1f)
                     .padding(
                         start = dimensionResource(R.dimen.dp_10)
@@ -310,21 +316,35 @@ private fun ProfileTopAppBar(
             }
         }
         Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_3)))
-        Text(
-            text = "Welcome Daniel",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = modifier
-                .padding(start = dimensionResource(R.dimen.dp_10))
-        )
+       Row(modifier = modifier) {
+           Text(
+               text = "Welcome",
+               style = MaterialTheme.typography.titleSmall,
+               color = MaterialTheme.colorScheme.onBackground,
+               modifier = Modifier
+                   .padding(start = dimensionResource(R.dimen.dp_10))
+           )
+           Text(
+               text = "Daniel",
+               style = MaterialTheme.typography.titleSmall,
+               color = MaterialTheme.colorScheme.primary,
+               fontSize = 16.sp,
+               modifier = Modifier
+                   .padding(
+                       horizontal = dimensionResource(R.dimen.dp_5),
+                       vertical = dimensionResource(R.dimen.dp_3)
+                       )
+           )
+       }
         Text(
             text = "Daniel11044@gmail.com",
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Justify,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.tertiary,
             fontWeight = FontWeight.Medium,
-            modifier = modifier
+            modifier = Modifier
                 .padding(start = dimensionResource(R.dimen.dp_10))
         )
+        JenStoreDivider()
     }
 }

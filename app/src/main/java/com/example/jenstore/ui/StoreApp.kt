@@ -1,6 +1,8 @@
 package com.example.jenstore.ui
 
+import androidx.compose.material.Divider
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,11 +21,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.Home
+import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.StoreNavHost
 import com.example.jenstore.navigateSingleTopTo
 import com.example.jenstore.storeTabRowBottomBar
+import com.example.jenstore.ui.screens.cart.JenStoreDivider
+import com.example.jenstore.ui.screens.feed.FeedViewModel
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
@@ -33,6 +38,7 @@ import com.example.jenstore.ui.theme.JenstoreTheme
 fun StoreApp() {
     val homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val feedViewModel: FeedViewModel = viewModel(factory = AppViewModelProvider.Factory)
     
     JenstoreTheme {
         val navController = rememberNavController()
@@ -51,6 +57,7 @@ fun StoreApp() {
             },
             homeViewModel = homeViewModel,
             productDetailsViewModel = productDetailsViewModel,
+            feedViewModel = feedViewModel
         )
     }
 }
@@ -59,32 +66,38 @@ fun StoreApp() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoreTopAppBar(
+    modifier: Modifier = Modifier,
     screen: StoreDestinations,
-    onCartClicked: () -> Unit,
-    modifier: Modifier = Modifier
+    onCartClicked: (StoreDestinations) -> Unit,
+    pressed: Boolean = false
 ) {
     CenterAlignedTopAppBar(
+        navigationIcon = {
+            if (pressed) {
+                CircularProgressIndicator()
+            }
+        },
         title = {
             Text(
                 text = stringResource(R.string.topBarName),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Serif,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.tertiary
             )
         },
         actions = {
             IconButton(
-                onClick = onCartClicked
+                onClick = { onCartClicked(MyCart) }
             ) {
                 Icon(
                     imageVector = screen.icon,
                     contentDescription = screen.route,
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.outlineVariant),
-        modifier = modifier
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+        modifier = Modifier
     )
 }

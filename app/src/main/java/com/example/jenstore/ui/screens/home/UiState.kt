@@ -1,5 +1,7 @@
 package com.example.jenstore.ui.screens.home
 
+import androidx.compose.runtime.State
+import androidx.paging.PagingData
 import com.example.jenstore.data.model.ProductItem
 
 data class UiState(

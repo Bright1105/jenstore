@@ -1,7 +1,10 @@
 package com.example.jenstore.ui.screens.home
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,24 +21,19 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -44,11 +42,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,25 +58,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.jenstore.HomeList
 import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.ui.StoreTopAppBar
 import com.example.jenstore.data.model.ItemType
-import com.example.jenstore.data.model.ItemsX
 import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
-import com.example.jenstore.ui.screens.feed.ErrorScreen
-import com.example.jenstore.ui.screens.feed.LoadingScreen
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -89,7 +84,7 @@ fun HomeScreen(
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
-    onCartClicked: () -> Unit,
+    onCartClicked: (StoreDestinations) -> Unit,
     onItemClicked: (Int) -> Unit,
     navigateToCart: (StoreDestinations) -> Unit,
     navigateToSearch: (StoreDestinations) -> Unit,
@@ -99,98 +94,59 @@ fun HomeScreen(
     val uiState: UiState by viewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
 
-    when (homeUiState) {
-        is HomeUiState.Loading -> Loading()
-        is HomeUiState.Success -> {
-            if (uiState.isShowingHomePage) {
-                Home(
-                    itemsHair = homeUiState.item.filter {
-                        it.items.itemType == "hair"
-                    }.subList(0, 4)
-                        .sortedBy {
-                        it.items.dateCreated
-                    },
-                    itemsBag = homeUiState.item.filter {
-                        it.items.itemType == "bag"
-                    }.subList(0, 2)
-                        .sortedBy {
-                        it.items.dateCreated
-                    },
-                    itemsShoe = homeUiState.item.filter {
-                        it.items.itemType == "shoe"
-                    }.subList(0, 2)
-                        .sortedBy {
-                        it.items.dateCreated
-                    },
-                    itemsClothe = homeUiState.item.filter {
-                        it.items.itemType == "clothe"
-                    }.subList(0, 3)
-                        .sortedBy {
-                        it.items.dateCreated
-                    },
-                    allScreen = allScreen,
-                    onTabClicked = onTabClicked,
-                    currentScreen = currentScreen,
-                    onHairSeeAllClicked = {
-                        scope.launch {
-                            viewModel.seeHairAllClicked()
-                        }
-                    },
-                    onShoeSeeAllClicked = {
-                        scope.launch {
-                            viewModel.seeShoeALlClicked()
-                        }
-                    },
-                    onClotheSeeAllClicked = {
-                        scope.launch {
-                            viewModel.seeClotheALlClicked()
-                        }
-                    },
-                    onBagSeeAllClicked = {
-                        scope.launch {
-                            viewModel.seeBagALlClicked()
-                        }
-                    },
-                    onCartClicked = onCartClicked,
-                    onItemClicked = onItemClicked,
-                    uiState = uiState,
-                    isRefreshing = uiState.isRefreshing,
-                    onRefresh = {
-                        viewModel.refreshItems()
-                        uiState.isRefreshing = false
-                    }
-                )
-            } else {
-                ItemListScreen(
-                    navigateToSearch = navigateToSearch,
-                    navigateToCart = navigateToCart,
-                    onListBackClicked = {
-                        viewModel.listBackClicked()
-                    },
-                    items = uiState.itemType,
-                    onItemClicked = onItemClicked,
-                    currentRoute = currentScreen
-                )
-            }
-        }
 
-        is HomeUiState.Error -> Error(
-            message = homeUiState.message,
-            retryAction = viewModel::getItem
+    if (uiState.isShowingHomePage) {
+        Home(
+            homeUiState = homeUiState,
+            homeViewModel = viewModel,
+            allScreen = allScreen,
+            onTabClicked = onTabClicked,
+            currentScreen = currentScreen,
+            onHairSeeAllClicked = {
+                scope.launch {
+                    viewModel.seeHairAllClicked()
+                }
+            },
+            onShoeSeeAllClicked = {
+                scope.launch {
+                    viewModel.seeShoeALlClicked()
+                }
+            },
+            onClotheSeeAllClicked = {
+                scope.launch {
+                    viewModel.seeClotheALlClicked()
+                }
+            },
+            onBagSeeAllClicked = {
+                scope.launch {
+                    viewModel.seeBagALlClicked()
+                }
+            },
+            onCartClicked = onCartClicked,
+            onItemClicked = onItemClicked,
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = {
+                viewModel.refreshItems()
+                uiState.isRefreshing = false
+            }
+        )
+    } else {
+        ItemListScreen(
+            navigateToSearch = navigateToSearch,
+            navigateToCart = navigateToCart,
+            onListBackClicked = {
+                viewModel.listBackClicked()
+            },
+            items = uiState.itemType,
+            onItemClicked = onItemClicked,
+            currentRoute = currentScreen
         )
     }
 }
 
 
-
-
-
 @Composable
 fun Home(
-    itemsHair: List<ProductItem>,
-    itemsShoe: List<ProductItem>,
-    itemsBag: List<ProductItem>,
-    itemsClothe: List<ProductItem>,
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
@@ -198,11 +154,12 @@ fun Home(
     onShoeSeeAllClicked: () -> Unit,
     onBagSeeAllClicked: () -> Unit,
     onClotheSeeAllClicked: () -> Unit,
-    onCartClicked: () -> Unit,
+    onCartClicked: (StoreDestinations) -> Unit,
     onItemClicked: (Int) -> Unit,
-    uiState: UiState,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    homeUiState: HomeUiState,
+    homeViewModel: HomeViewModel,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -227,19 +184,16 @@ fun Home(
                 .padding(it)
         ) {
             HomeItem(
-                itemsHair,
-                itemsShoe,
-                itemsBag,
-                itemsClothe,
+                homeUiState = homeUiState,
+                homeViewModel = homeViewModel,
+                navigateToCart = onCartClicked,
                 onHairSeeAllClicked = onHairSeeAllClicked,
                 onBagSeeAllClicked = onBagSeeAllClicked,
                 onClotheSeeAllClicked = onClotheSeeAllClicked,
                 onShoeSeeAllClicked = onShoeSeeAllClicked,
                 onItemClicked = onItemClicked,
-                uiState = uiState,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh,
-
             )
         }
     }
@@ -248,18 +202,16 @@ fun Home(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeItem(
-    itemsHair: List<ProductItem>,
-    itemsShoe: List<ProductItem>,
-    itemsBag: List<ProductItem>,
-    itemsClothe: List<ProductItem>,
     onHairSeeAllClicked: () -> Unit,
     onShoeSeeAllClicked: () -> Unit,
     onBagSeeAllClicked: () -> Unit,
     onClotheSeeAllClicked: () -> Unit,
     onItemClicked: (Int) -> Unit,
-    uiState: UiState,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    homeUiState: HomeUiState,
+    homeViewModel: HomeViewModel,
+    navigateToCart: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier,
     lazyListState: LazyListState = rememberLazyListState()
 ) {
@@ -281,44 +233,52 @@ private fun HomeItem(
                HomeItemTitle(
                    itemType = ItemType.Hairs,
                    onSeeAllClicked = onHairSeeAllClicked,
-                   uiState = uiState,
                ) {
                    HomeItemList(
-                       items = itemsHair,
-                       onItemClicked = onItemClicked
+                       homeUiState = homeUiState,
+                       itemType = "hair",
+                       onItemClicked = onItemClicked,
+                       homeViewModel = homeViewModel,
+                       navigateToCart = navigateToCart,
                    )
                }
-               Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_35)))
+               Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_35)))
                HomeItemTitle(
                    itemType = ItemType.Bags,
                    onSeeAllClicked = onBagSeeAllClicked,
-                   uiState = uiState,
                ) {
                    HomeItemList(
-                       items = itemsBag,
-                       onItemClicked = onItemClicked
+                       homeUiState = homeUiState,
+                       itemType = "bag",
+                       onItemClicked = onItemClicked,
+                       homeViewModel = homeViewModel,
+                       navigateToCart = navigateToCart
                    )
                }
-               Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_35)))
+               Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_35)))
                HomeItemTitle(
                    itemType = ItemType.Shoes,
                    onSeeAllClicked = onShoeSeeAllClicked,
-                   uiState = uiState,
                ) {
                    HomeItemList(
-                       items = itemsShoe,
-                       onItemClicked = onItemClicked
+                       homeUiState = homeUiState,
+                       itemType = "shoe",
+                       onItemClicked = onItemClicked,
+                       homeViewModel = homeViewModel,
+                       navigateToCart = navigateToCart
                    )
                }
                Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_35)))
                HomeItemTitle(
                    itemType = ItemType.Clothes,
                    onSeeAllClicked = onClotheSeeAllClicked,
-                   uiState = uiState,
                ) {
                    HomeItemList(
-                       items = itemsClothe,
+                       homeUiState = homeUiState,
+                       itemType = "clothe",
                        onItemClicked = onItemClicked,
+                       homeViewModel = homeViewModel,
+                       navigateToCart = navigateToCart
                    )
                }
            }
@@ -346,42 +306,77 @@ private fun HomeItem(
    }
 }
 
-@Composable
-private fun HomeHorizontalDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(
-        thickness = dimensionResource(R.dimen.dp_5),
-        modifier = modifier
-            .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.tertiaryContainer
-    )
-}
 
 
 @Composable
 private fun HomeItemList(
-    items: List<ProductItem>,
+    //items: List<ProductItem>,
     onItemClicked: (Int) -> Unit,
+    itemType: String,
+    homeUiState: HomeUiState,
+    homeViewModel: HomeViewModel,
+    navigateToCart: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyHorizontalGrid(
-        GridCells.Fixed(1),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_15)),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_35)),
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(max = dimensionResource(R.dimen.dp_400))
-            .padding(
-                start = dimensionResource(R.dimen.dp_10),
-                end = dimensionResource(R.dimen.dp_10)
-            )
-    ) {
-        items(items, key = { item -> item.items.id }) {
-           HomeItemAndImage(
-               item = it,
-               onItemClicked = onItemClicked
-           )
+
+   // val context = LocalContext.current
+    //    LaunchedEffect(key1 = items.loadState) {
+    //        if (items.loadState.refresh is LoadState.Error) {
+    //            Toast.makeText(
+    //                context,
+    //                "Error: " + (items.loadState.refresh as LoadState.Error).error.message,
+    //                Toast.LENGTH_LONG
+    //            ).show()
+    //        }
+    //    }
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
+
+    val pressed by interactionSource.collectIsPressedAsState()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_15)),
+            modifier = Modifier
+                .fillMaxSize()
+                .heightIn(max = dimensionResource(R.dimen.dp_400))
+                .padding(
+                    start = dimensionResource(R.dimen.dp_10),
+                    end = dimensionResource(R.dimen.dp_10)
+                )
+        ) {
+            when (homeUiState) {
+                is HomeUiState.Loading -> {
+                    item {
+                        Loading()
+                    }
+                }
+                is HomeUiState.Success -> {
+                    items(homeUiState.item.filter {
+                        it.itemType == itemType
+                    }.subList(0, 4).sortedByDescending {
+                        it.dateCreated
+                    }, key = { item -> item.id }) { item ->
+                        HomeItemAndImage(
+                            item = item,
+                            onItemClicked = onItemClicked
+                        )
+                    }
+                }
+                is HomeUiState.Error -> {
+                    item {
+                        Error(
+                            message = homeUiState.message,
+                            retryAction = homeViewModel::getItem,
+                            navigateToCart = navigateToCart
+                        )
+                    }
+                }
+            }
         }
     }
+
 }
 
 @Composable
@@ -390,50 +385,51 @@ fun HomeItemAndImage(
     onItemClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box() {
+    Box(modifier = modifier) {
         Column {
             HomeItemImage(
                 image = item,
-                modifier = modifier
-                    .clickable { onItemClicked(item.items.id) }
+                modifier = Modifier
+                    .clickable { onItemClicked(item.id) }
             )
-            Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_10)))
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             Text(
-                text = item.items.title.uppercase(),
+                text = item.title.uppercase(),
                 style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Justify,
-                modifier = modifier
+                modifier = Modifier
                     .padding(
                         bottom = dimensionResource(R.dimen.dp_2)
                     )
                     .align(alignment = Alignment.CenterHorizontally)
-                    .clickable { onItemClicked(item.items.id) }
+                    .clickable { onItemClicked(item.id) }
             )
             Text(
-                text = item.items.brand.uppercase(),
+                text = item.brand.uppercase(),
                 style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.ExtraLight,
-                modifier = modifier
+                modifier = Modifier
                     .padding(
                         bottom = dimensionResource(R.dimen.dp_2)
                     )
                     .align(alignment = Alignment.CenterHorizontally)
             )
-            Row(modifier = modifier.align(alignment = Alignment.CenterHorizontally)) {
+            Row(modifier = Modifier.align(alignment = Alignment.CenterHorizontally)) {
                 Icon(
                     painter = painterResource(R.drawable.naira_sign),
                     contentDescription = stringResource(R.string.naira),
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = modifier
+                    modifier = Modifier
                         .size(dimensionResource(R.dimen.dp_15))
                 )
                 Text(
-                    text = item.items.price.toString(),
+                    text = item.price.toString(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = modifier
+                    modifier = Modifier
                         .padding(
                             bottom = dimensionResource(R.dimen.dp_2)
                         )
@@ -447,7 +443,6 @@ fun HomeItemAndImage(
 @Composable
 private fun HomeItemTitle(
     itemType: ItemType,
-    uiState: UiState,
     onSeeAllClicked: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
@@ -457,9 +452,9 @@ private fun HomeItemTitle(
             Text(
                 text = itemType.name,
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.tertiary,
                 fontFamily = FontFamily.Serif,
-                modifier = modifier
+                modifier = Modifier
                     .weight(1f)
                     .padding(
                         top = dimensionResource(R.dimen.dp_10),
@@ -474,8 +469,8 @@ private fun HomeItemTitle(
                     text = stringResource(R.string.viewAll),
                     style = MaterialTheme.typography.displayLarge,
                     fontFamily = FontFamily.Serif,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = modifier
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
                         .padding(
                             top = dimensionResource(R.dimen.dp_10),
                             bottom = dimensionResource(R.dimen.dp_10)
@@ -502,12 +497,11 @@ private fun HomeItemImage(
                 .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image.image}")
                 .crossfade(true)
                 .build(),
-            contentDescription = image.items.title,
+            contentDescription = image.title,
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.ic_broken_image),
             placeholder = painterResource(R.drawable.loading_img),
-            filterQuality = FilterQuality.High,
-            modifier = modifier
+            modifier = Modifier
                 .width(162.dp)
                 .height(250.dp)
         )
@@ -518,6 +512,7 @@ private fun HomeItemImage(
 fun Error(
     message: String?,
     retryAction: () -> Unit,
+    navigateToCart: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -527,6 +522,14 @@ fun Error(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        IconButton(
+            onClick = { navigateToCart(MyCart) }
+        ) {
+            Icon(
+                imageVector = Icons.Default.ShoppingCart,
+                contentDescription = "cart"
+            )
+        }
         message?.let { Text(text = it) }
         Image(
             painter = painterResource(R.drawable.ic_connection_error),
@@ -552,7 +555,9 @@ fun Loading(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
         //Image(
         //            painter = painterResource(R.drawable.loading_img),
         //            contentDescription = "Error",
@@ -570,22 +575,22 @@ fun Loading(modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
 
-    val mockData = listOf(
-        ProductItem(
-            items = ItemsX(
-                brand = "woman hair",
-                description = "hair",
-                itemType = "hair",
-                title = "hair1",
-                price = 200,
-                dateCreated = "20",
-                id = 1,
-            ),
-
-            image = "",
-        ),
-
-    )
+    //val mockData = listOf(
+    //        ProductItem(
+    //            items = ItemsX(
+    //                brand = "woman hair",
+    //                description = "hair",
+    //                itemType = "hair",
+    //                title = "hair1",
+    //                price = 200,
+    //                dateCreated = "20",
+    //                id = 1,
+    //            ),
+    //
+    //            image = "",
+    //        ),
+    //
+    //    )
     JenstoreTheme {
        // HomeItemListHair(
         //            items = mockData,

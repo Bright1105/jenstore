@@ -4,9 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,14 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,17 +41,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PlatformImeOptions
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
+import com.example.jenstore.data.mappers.toProductItem
 import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
@@ -68,7 +74,7 @@ fun SearchScreen(
     searchViewModel: SearchViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigateToCart: (StoreDestinations) -> Unit,
     navigateToSearch: (StoreDestinations) -> Unit,
-    homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    onItemClicked: (Int) -> Unit
 ) {
     val searchUiState by searchViewModel.uiState.collectAsState()
 
@@ -76,50 +82,26 @@ fun SearchScreen(
 
     val searchText by searchViewModel.searchItem.collectAsState()
 
-    val product by searchViewModel.product.collectAsState()
+    val products by searchViewModel.products.collectAsState()
 
-    val homeUiState by homeViewModel.uiState.collectAsState()
 
     Scaffold(
 
         topBar = {
-                 if (homeUiState.isShowingHomePage) {
-                     SearchInputFiled(
-                         value = searchText,
-                         onValueChange = searchViewModel::searchQuery,
-                         searchUiState = searchUiState,
-                         onSearchBackClicked = {
-                             searchViewModel.onBackClicked()
-                         },
-                         modifier = Modifier
-                             .height(dimensionResource(R.dimen.dp_70))
-                             .padding(
-                                 top = dimensionResource(R.dimen.dp_20),
-                                 start = dimensionResource(R.dimen.dp_10),
-                                 end = dimensionResource(R.dimen.dp_10)
-                             )
-
-                     )
-                 } else {
-                     IconButton(
-                         onClick = {
-                             homeViewModel.listBackClicked()
-                         },
-                         modifier = Modifier
-                             .height(dimensionResource(R.dimen.dp_70))
-                     ) {
-                         Icon(
-                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                             contentDescription = stringResource(R.string.back),
-                             tint = MaterialTheme.colorScheme.onTertiary,
-                             modifier = Modifier
-                         )
-                     }
-                 }
+            if (searchUiState.isShowingSearchHome) {
+                SearchInputFiled(
+                    value = searchText,
+                    onValueChange = searchViewModel::searchQuery,
+                    searchUiState = searchUiState,
+                    onSearchBackClicked = {
+                        searchViewModel.onSearchBackClicked()
+                    },
+                )
+            }
         },
 
         bottomBar = {
-            if (homeUiState.isShowingHomePage) {
+            if (searchUiState.isShowingSearchHome && !searchUiState.searching) {
                 StoreTabRow(
                     allScreensBar = allScreen,
                     onTabSelected = onTabClicked,
@@ -128,53 +110,53 @@ fun SearchScreen(
             }
         },
 
-        containerColor = if (homeUiState.isShowingHomePage) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onTertiaryContainer
+        containerColor = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
                 .padding(it)
-                .verticalScroll(rememberScrollState())
         ) {
-            if (homeUiState.isShowingHomePage) {
+            if (searchUiState.isShowingSearchHome && !searchUiState.searching) {
                 SearchCategories(
                     onHairClicked = {
                         scope.launch {
-                            homeViewModel.seeHairAllClicked()
+                            searchViewModel.onHairClicked()
                         }
                     },
                     onShoeClicked = {
                         scope.launch {
-                            homeViewModel.seeShoeALlClicked()
+                            searchViewModel.onShoeClicked()
                         }
                     },
                     onBagClicked = {
                         scope.launch {
-                            homeViewModel.seeBagALlClicked()
+                            searchViewModel.onBagClicked()
                         }
                     },
                     onClothesClicked = {
                         scope.launch {
-                            homeViewModel.seeClotheALlClicked()
+                            searchViewModel.onClotheClicked()
                         }
                     }
                 )
-            } else  {
+            } else if(!searchUiState.isShowingSearchHome && !searchUiState.searching)  {
                 ItemListScreen(
-                    onListBackClicked = { /*TODO*/ },
-                    items = homeUiState.itemType,
-                    onItemClicked = {},
+                    onListBackClicked = {
+                        searchViewModel.onBackClicked()
+                    },
+                    items = searchUiState.item,
+                    onItemClicked = onItemClicked,
                     navigateToSearch = navigateToSearch,
                     navigateToCart = navigateToCart,
                     currentRoute = currentScreen
                 )
+            } else {
+                SearchItemList(
+                    items = products,
+                    onItemClicked = onItemClicked,
+                    onBuyClicked = { /*TODO*/ }
+                )
             }
-                //else {
-            //                SearchItemList(
-            //                    items = product,
-            //                    onItemClicked = {},
-            //                    onBuyClicked = { /*TODO*/ }
-            //                )
-            //            }
         }
     }
 }
@@ -187,11 +169,48 @@ private fun SearchItemList(
     onBuyClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn {
-        items(items, key = { item -> item.items.id }) { item ->
-            HomeItemAndImage(
+    LazyVerticalGrid(
+        GridCells.Fixed(2),
+        modifier = Modifier
+            .padding(vertical = dimensionResource(R.dimen.dp_15))
+            .padding(start = dimensionResource(R.dimen.dp_10))
+
+    ) {
+        items(items, key = { item -> item.id }) { item ->
+            SearchProduct(
                 item = item,
-                onItemClicked = { onItemClicked(item.items.id) }
+                onItemClicked = onItemClicked,
+                onBuyClicked = onBuyClicked,
+                modifier = modifier
+                    .padding(bottom = dimensionResource(R.dimen.dp_10))
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchProduct(
+    item: ProductItem,
+    onItemClicked: (Int) -> Unit,
+    onBuyClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        HomeItemAndImage(
+            item = item,
+            onItemClicked = onItemClicked
+        )
+        Button(
+            onClick = onBuyClicked,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .width(162.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.addToCart),
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.background
             )
         }
     }
@@ -211,7 +230,7 @@ private fun SearchCategories(
             color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier
                 .padding(
-                    top = dimensionResource(R.dimen.dp_50),
+                    top = dimensionResource(R.dimen.dp_40),
                     bottom = dimensionResource(R.dimen.dp_15),
                     start = dimensionResource(R.dimen.dp_10)
                 )
@@ -335,38 +354,59 @@ fun SearchInputFiled(
     onSearchBackClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = stringResource(R.string.search),
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-        },
-        shape = ShapeDefaults.Small,
-        placeholder = {
-            Text(
-                text = stringResource(R.string.search),
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.background
-            )
-        },
-        keyboardOptions = KeyboardOptions.Default.copy(
-            autoCorrect = true,
-            imeAction = ImeAction.Done
-        ),
-        singleLine = true,
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = MaterialTheme.colorScheme.background,
-            unfocusedBorderColor = MaterialTheme.colorScheme.onTertiaryContainer
-        ),
-        modifier = modifier
-            .animateContentSize()
-            .height(dimensionResource(R.dimen.dp_50))
-            .fillMaxWidth()
-            .padding(dimensionResource(R.dimen.dp_5))
+    Column(modifier = modifier) {
+        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_50)))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            leadingIcon = {
+                if (searchUiState.searching) {
+                    IconButton(
+                        onClick = onSearchBackClicked
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.search),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            shape = ShapeDefaults.Large,
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.search),
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                autoCorrect = true,
+                imeAction = ImeAction.Done
+            ),
+            singleLine = true,
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = if (searchUiState.searching) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.primary
+            ),
+            textStyle = TextStyle.Default.copy(
+                color = MaterialTheme.colorScheme.tertiary,
+                fontStyle = FontStyle.Normal,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Serif,
 
-    )
+            ),
+            modifier = Modifier
+                .animateContentSize()
+                .fillMaxWidth()
+                .padding(horizontal = dimensionResource(R.dimen.dp_10))
+
+        )
+    }
 }
