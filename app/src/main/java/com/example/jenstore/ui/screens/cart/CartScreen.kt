@@ -83,16 +83,14 @@ import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.ui.screens.common.StoreTabRow
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.text.NumberFormat
-import java.util.Locale
+
 
 @Composable
 fun CartScreen(
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
+    onItemClicked: (Int) -> Unit,
     //removeItem: (Int) -> Unit,
     //    increaseItemCount: (Int) -> Unit,
     //    decreaseItemCount: (Int) -> Unit,
@@ -122,9 +120,9 @@ fun CartScreen(
             CartContent(
                 items = cartUiState.items,
                 removeItem = cartViewModel::deleteItem,
-                increaseItemCount = {},
-                decreaseItemCount = {},
-                onItemClicked = {}
+                increaseItemCount = cartViewModel::increaseCount,
+                decreaseItemCount = cartViewModel::decreaseCount,
+                onItemClicked = onItemClicked
             )
         }
     }
@@ -134,8 +132,8 @@ fun CartScreen(
 private fun CartContent(
     items: List<OrdersEntity>,
     removeItem: (OrdersEntity) -> Unit,
-    increaseItemCount: (Int) -> Unit,
-    decreaseItemCount: (Int) -> Unit,
+    increaseItemCount: (OrdersEntity) -> Unit,
+    decreaseItemCount: (OrdersEntity) -> Unit,
     onItemClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -253,16 +251,16 @@ private fun CartContent(
                 CartItem(
                     count = order.countItem,
                     item = order,
-                    removeItem = removeItem,
-                    increaseItemCount = { increaseItemCount(order.id) },
-                    decreaseItemCount = { decreaseItemCount(order.id) },
+                    removeItem = { removeItem(it) },
+                    increaseItemCount = { increaseItemCount(order) },
+                    decreaseItemCount = { decreaseItemCount(order) },
                     onItemClicked = onItemClicked
                 )
             }
         }
         item {
             SummaryItem(
-                subtotal = items.sumOf { it.price.toLong() * it.countItem },
+                subtotal = items.sumOf { it.price * it.countItem },
                 shippingCosts = 3000
             )
         }
@@ -274,8 +272,8 @@ private fun CartItem(
     count: Int,
     item: OrdersEntity,
     removeItem: (OrdersEntity) -> Unit,
-    increaseItemCount: () -> Unit,
-    decreaseItemCount: () -> Unit,
+    increaseItemCount: (OrdersEntity) -> Unit,
+    decreaseItemCount: (OrdersEntity) -> Unit,
     onItemClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -286,7 +284,7 @@ private fun CartItem(
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 24.dp)
     ) {
-        val (divider , image, title, brand, priceSpacer, price, remove, quantity) = createRefs()
+        val (divider , image, title, brand, priceSpacer, nairaIcon, price, remove, quantity) = createRefs()
         createVerticalChain(title, brand, priceSpacer, price, chainStyle = ChainStyle.Packed)
         CartProductImage(
             image = item.image,
@@ -350,7 +348,7 @@ private fun CartItem(
                 }
         )
         Text(
-            text = formatPrice(item.price.toLong()),
+            text = item.price.toString(),
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.constrainAs(price) {
@@ -365,8 +363,8 @@ private fun CartItem(
         )
         CartQuantitySelector(
             count = count,
-            decreaseItemCount = decreaseItemCount,
-            increaseItemCount = increaseItemCount,
+            decreaseItemCount = { decreaseItemCount(item) },
+            increaseItemCount = { increaseItemCount(item) },
             modifier = Modifier.constrainAs(quantity) {
                 baseline.linkTo(price.baseline)
                 end.linkTo(parent.end)
@@ -399,7 +397,7 @@ private fun CartQuantitySelector(
                     .align(Alignment.CenterVertically)
             )
             CartProductQ(
-                onClicked = decreaseItemCount,
+                onClicked =  decreaseItemCount,
                 imageVector = Icons.Default.Remove,
                 contentDescription = R.string.decrease,
                 modifier = Modifier.align(Alignment.CenterVertically)
@@ -430,10 +428,12 @@ private fun CartQuantitySelector(
 
 @Composable
 private fun SummaryItem(
-    subtotal: Long,
-    shippingCosts: Long,
+    subtotal: Int,
+    shippingCosts: Int,
     modifier: Modifier = Modifier
 ) {
+    val total = subtotal + shippingCosts
+
     Column(modifier) {
         Text(
             text = stringResource(R.string.summary),
@@ -455,8 +455,15 @@ private fun SummaryItem(
                     .wrapContentWidth(Alignment.Start)
                     .alignBy(LastBaseline)
             )
+            Icon(
+                painter = painterResource(R.drawable.naira_sign),
+                contentDescription = stringResource(R.string.naira),
+                modifier = Modifier
+                    .alignBy(LastBaseline)
+                    .size(dimensionResource(R.dimen.dp_15))
+            )
             Text(
-                text = formatPrice(subtotal),
+                text = subtotal.toString(),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.alignBy(LastBaseline)
             )
@@ -470,8 +477,14 @@ private fun SummaryItem(
                     .wrapContentWidth(Alignment.Start)
                     .alignBy(LastBaseline)
             )
+            Icon(
+                painter = painterResource(R.drawable.naira_sign),
+                contentDescription = stringResource(R.string.naira),
+                modifier = Modifier
+                    .size(dimensionResource(R.dimen.dp_15))
+            )
             Text(
-                text = formatPrice(shippingCosts),
+                text = shippingCosts.toString(),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.alignBy(LastBaseline)
             )
@@ -488,8 +501,15 @@ private fun SummaryItem(
                     .wrapContentWidth(Alignment.End)
                     .alignBy(LastBaseline)
             )
+            Icon(
+                painter = painterResource(R.drawable.naira_sign),
+                contentDescription = stringResource(R.string.naira),
+                modifier = Modifier
+                    .size(dimensionResource(R.dimen.dp_20))
+                    .padding(vertical = dimensionResource(R.dimen.dp_3))
+            )
             Text(
-                text = formatPrice(subtotal + shippingCosts),
+                text = total.toString(),
                 style = MaterialTheme.typography.displayLarge,
                 modifier = Modifier.alignBy(LastBaseline)
             )
@@ -498,11 +518,6 @@ private fun SummaryItem(
     }
 }
 
-fun formatPrice(price: Long): String {
-    return NumberFormat.getCurrencyInstance(Locale.getDefault()).format(
-        BigDecimal(price).movePointLeft(2)
-    )
-}
 
 
 @Composable
@@ -601,23 +616,6 @@ private fun CartBottomBarCheckout(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CartTopBar(
-    modifier: Modifier = Modifier,
-    currentScreen: StoreDestinations
-) {
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                text = currentScreen.route,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-        }
-    )
 }
 
 

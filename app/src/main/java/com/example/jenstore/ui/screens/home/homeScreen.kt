@@ -1,10 +1,7 @@
 package com.example.jenstore.ui.screens.home
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -58,22 +56,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import androidx.paging.filter
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
+import com.example.jenstore.data.model.Item
 import com.example.jenstore.ui.StoreTopAppBar
 import com.example.jenstore.data.model.ItemType
-import com.example.jenstore.data.model.ProductItem
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 
@@ -85,14 +83,23 @@ fun HomeScreen(
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
     onCartClicked: (StoreDestinations) -> Unit,
-    onItemClicked: (Int) -> Unit,
+    onItemClicked: (String) -> Unit,
     navigateToCart: (StoreDestinations) -> Unit,
     navigateToSearch: (StoreDestinations) -> Unit,
 ) {
 
+    //var itemT by remember{ mutableStateOf("")}
+
 
     val uiState: UiState by viewModel.uiState.collectAsState()
     val scope: CoroutineScope = rememberCoroutineScope()
+
+
+   // val paging = viewModel.products.map {  paging ->
+    //        paging.filter {
+    //            it.itemType == viewModel.itemType.value
+    //        }
+    //    }.collectAsLazyPagingItems()
 
 
     if (uiState.isShowingHomePage) {
@@ -104,21 +111,25 @@ fun HomeScreen(
             currentScreen = currentScreen,
             onHairSeeAllClicked = {
                 scope.launch {
+                   // viewModel.itemType.value = "hair"
                     viewModel.seeHairAllClicked()
                 }
             },
             onShoeSeeAllClicked = {
                 scope.launch {
+                  //  viewModel.itemType.value = "shoe"
                     viewModel.seeShoeALlClicked()
                 }
             },
             onClotheSeeAllClicked = {
                 scope.launch {
+                  //  viewModel.itemType.value = "clothe"
                     viewModel.seeClotheALlClicked()
                 }
             },
             onBagSeeAllClicked = {
                 scope.launch {
+                  //  viewModel.itemType.value = "bag"
                     viewModel.seeBagALlClicked()
                 }
             },
@@ -132,14 +143,14 @@ fun HomeScreen(
         )
     } else {
         ItemListScreen(
+            items = uiState.item.collectAsLazyPagingItems(),
             navigateToSearch = navigateToSearch,
             navigateToCart = navigateToCart,
             onListBackClicked = {
                 viewModel.listBackClicked()
             },
-            items = uiState.itemType,
             onItemClicked = onItemClicked,
-            currentRoute = currentScreen
+            currentRoute = currentScreen,
         )
     }
 }
@@ -155,7 +166,7 @@ fun Home(
     onBagSeeAllClicked: () -> Unit,
     onClotheSeeAllClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
-    onItemClicked: (Int) -> Unit,
+    onItemClicked: (String) -> Unit,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     homeUiState: HomeUiState,
@@ -206,7 +217,7 @@ private fun HomeItem(
     onShoeSeeAllClicked: () -> Unit,
     onBagSeeAllClicked: () -> Unit,
     onClotheSeeAllClicked: () -> Unit,
-    onItemClicked: (Int) -> Unit,
+    onItemClicked: (String) -> Unit,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     homeUiState: HomeUiState,
@@ -310,8 +321,7 @@ private fun HomeItem(
 
 @Composable
 private fun HomeItemList(
-    //items: List<ProductItem>,
-    onItemClicked: (Int) -> Unit,
+    onItemClicked: (String) -> Unit,
     itemType: String,
     homeUiState: HomeUiState,
     homeViewModel: HomeViewModel,
@@ -329,13 +339,9 @@ private fun HomeItemList(
     //            ).show()
     //        }
     //    }
-    val interactionSource = remember {
-        MutableInteractionSource()
-    }
 
-    val pressed by interactionSource.collectIsPressedAsState()
+    Box(modifier = modifier.fillMaxSize()) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_15)),
             modifier = Modifier
@@ -346,21 +352,24 @@ private fun HomeItemList(
                     end = dimensionResource(R.dimen.dp_10)
                 )
         ) {
+
+
             when (homeUiState) {
                 is HomeUiState.Loading -> {
                     item {
-                        Loading()
+                        Loading(modifier = Modifier.fillMaxSize())
                     }
                 }
                 is HomeUiState.Success -> {
-                    items(homeUiState.item.filter {
+                    items( homeUiState.item.filter {
                         it.itemType == itemType
-                    }.subList(0, 4).sortedByDescending {
+                    }.sortedByDescending {
                         it.dateCreated
-                    }, key = { item -> item.id }) { item ->
+                    }, key = {item -> item.id }) { item ->
                         HomeItemAndImage(
                             item = item,
-                            onItemClicked = onItemClicked
+                            onItemClicked,
+                            modifier = Modifier
                         )
                     }
                 }
@@ -368,33 +377,42 @@ private fun HomeItemList(
                     item {
                         Error(
                             message = homeUiState.message,
-                            retryAction = homeViewModel::getItem,
-                            navigateToCart = navigateToCart
+                            retryAction = homeViewModel::getProduct,
+                            navigateToCart = navigateToCart,
+                            modifier = Modifier
+                                .fillMaxSize()
                         )
                     }
                 }
             }
+
         }
+
     }
+
 
 }
 
+
+
 @Composable
 fun HomeItemAndImage(
-    item: ProductItem,
-    onItemClicked: (Int) -> Unit,
+    item: Item,
+    onItemClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier
+            .clickable { onItemClicked(item.id) }
+    ) {
         Column {
             HomeItemImage(
                 image = item,
                 modifier = Modifier
-                    .clickable { onItemClicked(item.id) }
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             Text(
-                text = item.title.uppercase(),
+                text = item.name.uppercase(),
                 style = MaterialTheme.typography.displayLarge,
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Bold,
@@ -404,7 +422,6 @@ fun HomeItemAndImage(
                         bottom = dimensionResource(R.dimen.dp_2)
                     )
                     .align(alignment = Alignment.CenterHorizontally)
-                    .clickable { onItemClicked(item.id) }
             )
             Text(
                 text = item.brand.uppercase(),
@@ -485,7 +502,7 @@ private fun HomeItemTitle(
 
 @Composable
 private fun HomeItemImage(
-    image: ProductItem,
+    image: Item,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -494,10 +511,10 @@ private fun HomeItemImage(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image.image}")
+                .data(image.imageUri?.get(0))
                 .crossfade(true)
                 .build(),
-            contentDescription = image.title,
+            contentDescription = image.name,
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.ic_broken_image),
             placeholder = painterResource(R.drawable.loading_img),

@@ -3,11 +3,13 @@ package com.example.jenstore.data
 
 
 import android.content.Context
+import androidx.paging.PagingConfig
 import com.example.jenstore.data.local.StoreDatabase
-import com.example.jenstore.data.model.ProductItem
-import com.example.jenstore.data.remote.StoreApiService
-import com.example.jenstore.ui.screens.search.SearchMatchQuery
-import com.example.jenstore.ui.screens.search.SearchMatchQueryImpl
+import com.example.jenstore.data.paging.FeedPagingSource
+import com.example.jenstore.data.paging.ProductsPagingSource
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.firestore
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -17,33 +19,58 @@ interface AppContainer {
 
     val repository: Repository
 
-    val retrofit: Retrofit
 
     val storeDatabase: StoreDatabase
+
+    val feedPagingSource: FeedPagingSource
+
+    val productsPagingSource: ProductsPagingSource
 }
 
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
 
-    private val baseUrl = "https://86gnbdfj-8000.uks1.devtunnels.ms/"
-    override val retrofit: Retrofit = Retrofit.Builder()
-        .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
-        .baseUrl(baseUrl)
-        .build()
-
 
     override val storeDatabase: StoreDatabase = StoreDatabase.getDatabase(context)
 
 
+    private val db = Firebase.firestore
 
-    private val retrofitService: StoreApiService by lazy {
-        retrofit.create(StoreApiService::class.java)
+
+    private val provideQueryFeed = db
+        .collection("feedUri")
+       // .orderBy("id")
+        .limit(1)
+
+    private val pagingConfig = PagingConfig(
+        pageSize = 1
+    )
+
+    override val feedPagingSource: FeedPagingSource by lazy {
+        FeedPagingSource(queryFeed = provideQueryFeed)
     }
+
+    private val provideProductQuery = db
+        .collection("products")
+        .limit(4)
+
+    private val productPagingConfig = PagingConfig(
+        pageSize = 4
+    )
+
+    override val productsPagingSource: ProductsPagingSource by lazy {
+        ProductsPagingSource(queryProduct = provideProductQuery)
+    }
+
 
     override val repository: Repository by lazy {
         RepositoryImpl(
-            storeApiService = retrofitService,
-            ordersDao = storeDatabase.ordersDao()
+            ordersDao = storeDatabase.ordersDao(),
+            db = db,
+            source = feedPagingSource,
+            config = pagingConfig,
+            productSource = productsPagingSource,
+            productConfig = productPagingConfig
         )
     }
 }

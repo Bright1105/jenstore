@@ -1,14 +1,22 @@
 package com.example.jenstore.ui.screens.search
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.filter
 import com.example.jenstore.data.Repository
-import com.example.jenstore.data.mappers.toProductItem
-import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.data.model.Item
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -17,9 +25,11 @@ import kotlinx.coroutines.launch
 data class SearchUiState(
     val searching: Boolean = false,
     val isShowingSearchHome: Boolean = true,
-    val item: List<ProductItem> = listOf()
+    val item: Flow<PagingData<Item>> = flowOf(),
 )
 
+
+data class Errors(val message: String? = null)
 
 class SearchViewModel(
     private val repository: Repository,
@@ -29,24 +39,37 @@ class SearchViewModel(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState
 
+    private val _error = MutableStateFlow(Errors())
+    val error: StateFlow<Errors> = _error
 
     private val _searchItem = MutableStateFlow("")
 
     val searchItem = _searchItem.asStateFlow()
 
 
-
-    private val _product = MutableStateFlow<List<ProductItem>>(emptyList())
-    val products: StateFlow<List<ProductItem>> = _product
+    private val _product = MutableStateFlow<List<Item>>(listOf())
+    val products: StateFlow<List<Item>> = _product
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+
+
+
+    //val product = repository.getProductsPagination().cachedIn(viewModelScope)
+
+  //  var itemT = mutableStateOf("")
+
+
+    private var type = mutableStateOf("")
 
     fun getQueryProduct() {
         viewModelScope.launch {
-            val response = repository.searchQuery(_searchItem.value).map { dto ->
-                dto.toProductItem()
-            }
+            val response = repository.searchProduct(_searchItem.value)
+
             _product.value = response
         }
+
+
+        //repository.searchQuery(_searchItem.value).map { dto ->
+        //                dto.toProductItem()
     }
 
 
@@ -67,55 +90,69 @@ class SearchViewModel(
 
 
 
-    suspend fun onHairClicked() {
-        _uiState.update {
-            it.copy(
-                item = repository.getItems().filter { filter ->
-                    filter.items.itemType == "hair"
-                }.map {  dto ->
-                      dto.toProductItem()
-                },
-                isShowingSearchHome = false
-            )
+
+    fun onHairClicked() {
+        CoroutineScope(Dispatchers.IO).launch {
+            type.value = "hair"
+            _uiState.update {
+                it.copy(
+                    item = repository.getProductsPagination().map {  paging ->
+                        paging.filter {  item ->
+                            item.itemType == type.value
+                        }
+                    },
+                    isShowingSearchHome = false
+                )
+            }
+        }
+
+    }
+
+    fun onShoeClicked() {
+        CoroutineScope(Dispatchers.IO).launch {
+            type.value = "shoe"
+            _uiState.update {
+                it.copy(
+                    item = repository.getProductsPagination().map {  paging ->
+                        paging.filter {  item ->
+                            item.itemType == type.value
+                        }
+                    },
+                    isShowingSearchHome = false
+                )
+            }
         }
     }
 
-    suspend fun onShoeClicked() {
-        _uiState.update {
-            it.copy(
-                item = repository.getItems().filter {shoe ->
-                    shoe.items.itemType == "shoe"
-                }.map { dto ->
-                    dto.toProductItem()
-                },
-                isShowingSearchHome = false
-            )
+    fun onBagClicked() {
+        CoroutineScope(Dispatchers.IO).launch {
+            type.value = "bag"
+            _uiState.update {
+                it.copy(
+                    item = repository.getProductsPagination().map {  paging ->
+                        paging.filter {  item ->
+                            item.itemType == type.value
+                        }
+                    },
+                    isShowingSearchHome = false
+                )
+            }
         }
     }
 
-    suspend fun onBagClicked() {
-        _uiState.update {
-            it.copy(
-                item = repository.getItems().filter { bag ->
-                    bag.items.itemType == "bag"
-                }.map {  dto ->
-                    dto.toProductItem()
-                },
-                isShowingSearchHome = false
-            )
-        }
-    }
-
-    suspend fun onClotheClicked() {
-        _uiState.update {
-            it.copy(
-                item = repository.getItems().filter { clothe ->
-                    clothe.items.itemType == "clothe"
-                }.map {  dto ->
-                    dto.toProductItem()
-                },
-                isShowingSearchHome = false
-            )
+    fun onClotheClicked() {
+        CoroutineScope(Dispatchers.IO).launch {
+            type.value = "clothe"
+            _uiState.update {
+                it.copy(
+                    item = repository.getProductsPagination().map {  paging ->
+                        paging.filter {  item ->
+                            item.itemType == type.value
+                        }
+                    },
+                    isShowingSearchHome = false
+                )
+            }
         }
     }
 
@@ -129,9 +166,10 @@ class SearchViewModel(
         _searchItem.value = ""
     }
     fun onBackClicked() {
+        type.value = ""
         _uiState.update {
             it.copy(
-                item = emptyList(),
+                item = flowOf(),
                 isShowingSearchHome = true
             )
         }

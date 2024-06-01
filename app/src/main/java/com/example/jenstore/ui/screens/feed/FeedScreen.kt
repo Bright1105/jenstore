@@ -1,9 +1,8 @@
 package com.example.jenstore.ui.screens.feed
 
+
 import android.widget.Toast
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,9 +36,14 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
+import androidx.wear.compose.material.Text
+import com.example.jenstore.Feed
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
-import com.example.jenstore.data.model.ProductFeed
+import com.example.jenstore.data.model.Feeds
 import com.example.jenstore.ui.screens.common.StoreTabRow
 
 
@@ -51,6 +56,7 @@ fun FeedScreen(
     viewModel: FeedViewModel
 ) {
 
+    val pagingFeeds = viewModel.feeds.collectAsLazyPagingItems()
 
     Scaffold(
         bottomBar = {
@@ -66,19 +72,36 @@ fun FeedScreen(
                 .padding(it)
                 .fillMaxSize()
         ) {
-            when (feedUiState) {
-                is FeedUiState.Success -> {
-                    FeedList(
-                        feeds = feedUiState.feed,
-                        feedViewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
 
-                is FeedUiState.Loading -> {
-                    LoadingFeed(modifier = Modifier.fillMaxSize())
-                }
-            }
+            FeedList(
+                //feeds = pagingFeeds,
+                feedViewModel = viewModel
+            )
+
+            //when (feedUiState) {
+            //                is FeedUiState.Success -> {
+            //                    FeedList(
+            //                        feeds = feedUiState.feed,
+            //                        feedViewModel = viewModel,
+            //                        modifier = Modifier.fillMaxSize()
+            //                    )
+            //                }
+            //
+            //                is FeedUiState.Loading -> {
+            //                    LoadingFeed(modifier = Modifier.fillMaxSize())
+            //                }
+            //
+            //                is FeedUiState.Error -> {
+            //                    Text(
+            //                        text = feedUiState.message,
+            //                        style = MaterialTheme.typography.titleMedium,
+            //                        modifier = Modifier
+            //                            .fillMaxSize()
+            //                            .align(Alignment.CenterHorizontally)
+            //                    )
+            //                }
+            //
+            //            }
         }
     }
 }
@@ -87,7 +110,7 @@ fun FeedScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FeedList(
-    feeds: List<ProductFeed>,
+   // feeds: List<Feeds>,
     feedViewModel: FeedViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -104,25 +127,62 @@ private fun FeedList(
     //        }
     //    }
 
+
+
+    val pagingFeeds = feedViewModel.feeds.collectAsLazyPagingItems()
+
+    val refresh = pagingFeeds.loadState.refresh
+    val append = pagingFeeds.loadState.append
+
+    val context = LocalContext.current
+    LaunchedEffect(key1 = pagingFeeds.loadState) {
+        if (pagingFeeds.loadState.refresh is LoadState.Error) {
+            Toast.makeText(context, "error:" + (pagingFeeds.loadState.refresh as LoadState.Error).error.message, Toast.LENGTH_LONG).show()
+        }
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
 
+        if (pagingFeeds.loadState.refresh is LoadState.Loading) {
+            CircularProgressIndicator()
+        } else if (pagingFeeds.loadState.refresh is LoadState.Error) {
 
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_35)),
-            flingBehavior = ScrollableDefaults.flingBehavior()
-        ) {
-            items(feeds, key = { feed -> feed.id }) { feed ->
-                Feed(
-                    feed = feed,
-                    feedViewModel = feedViewModel,
-                    feedControlState = feedControlState,
-                )
+            (pagingFeeds.loadState.refresh as LoadState.Error).error.message?.let { Text(text = it) }
+        }  else {
+
+            LazyColumn(
+                modifier = modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_35)),
+                flingBehavior = ScrollableDefaults.flingBehavior()
+            ) {
+
+                items(items = pagingFeeds, key = {feed -> feed.id}) { feed ->
+                    feed?.let {
+                        Feed(
+                            feed = feed.videoUri,
+                            feedViewModel = feedViewModel,
+                            feedControlState = feedControlState
+                        )
+                    }
+                }
+
+                item {
+                    if (pagingFeeds.loadState.append is LoadState.Loading) {
+                        CircularProgressIndicator()
+                    }
+                }
+                //items(feeds, key = { feed -> feed.id }) { feed ->
+                //                Feed(
+                //                    feed = feed.videoUri,
+                //                    feedViewModel = feedViewModel,
+                //                    feedControlState = feedControlState,
+                //                )
+                //            }
             }
         }
+
     }
 }
 // if (feeds.loadState.refresh is LoadState.Loading) {
@@ -143,7 +203,7 @@ private fun FeedList(
 @Composable
 private fun Feed(
     modifier: Modifier = Modifier,
-    feed: ProductFeed,
+    feed: String,
     feedViewModel: FeedViewModel,
     feedControlState: FeedControlState,
 ) {
@@ -187,10 +247,9 @@ private fun Feed(
             factory = { content ->
                 PlayerView(content).also { player ->
                     player.player = mExoPlayer
-                    player.player?.addMediaItem(MediaItem.fromUri("https://86gnbdfj-8000.uks1.devtunnels.ms/${feed.videos}")) //check
+                    player.player?.addMediaItem(MediaItem.fromUri(feed)) //check
                     player.useController = true
                     player.player?.prepare()
-
                 }
 
             },

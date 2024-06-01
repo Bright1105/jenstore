@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -50,20 +47,21 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.PlatformImeOptions
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.filter
 import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
-import com.example.jenstore.data.mappers.toProductItem
-import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.data.model.Item
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
 import com.example.jenstore.ui.screens.home.HomeItemAndImage
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Composable
@@ -74,7 +72,8 @@ fun SearchScreen(
     searchViewModel: SearchViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigateToCart: (StoreDestinations) -> Unit,
     navigateToSearch: (StoreDestinations) -> Unit,
-    onItemClicked: (Int) -> Unit
+    onItemClicked: (String) -> Unit,
+    homeViewModel: HomeViewModel
 ) {
     val searchUiState by searchViewModel.uiState.collectAsState()
 
@@ -84,22 +83,18 @@ fun SearchScreen(
 
     val products by searchViewModel.products.collectAsState()
 
+    val error by searchViewModel.error.collectAsState()
+
+
+
+
+    // val searchPagingItems = searchViewModel.product.map {  paging ->
+    //        paging.filter {
+    //            it.itemType == searchViewModel.itemT.value
+    //        }
+    //    }.collectAsLazyPagingItems()
 
     Scaffold(
-
-        topBar = {
-            if (searchUiState.isShowingSearchHome) {
-                SearchInputFiled(
-                    value = searchText,
-                    onValueChange = searchViewModel::searchQuery,
-                    searchUiState = searchUiState,
-                    onSearchBackClicked = {
-                        searchViewModel.onSearchBackClicked()
-                    },
-                )
-            }
-        },
-
         bottomBar = {
             if (searchUiState.isShowingSearchHome && !searchUiState.searching) {
                 StoreTabRow(
@@ -116,25 +111,49 @@ fun SearchScreen(
             modifier = Modifier
                 .padding(it)
         ) {
+            error.message.let { message ->
+                if (message != null) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.titleSmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+
             if (searchUiState.isShowingSearchHome && !searchUiState.searching) {
+                SearchInputFiled(
+                    value = searchText,
+                    onValueChange = searchViewModel::searchQuery,
+                    searchUiState = searchUiState,
+                    onSearchBackClicked = {
+                        searchViewModel.onSearchBackClicked()
+                    },
+                )
                 SearchCategories(
                     onHairClicked = {
                         scope.launch {
+                          //  searchViewModel.itemT.value = "hair"
                             searchViewModel.onHairClicked()
                         }
                     },
                     onShoeClicked = {
                         scope.launch {
+                          //  searchViewModel.itemT.value = "shoe"
                             searchViewModel.onShoeClicked()
                         }
                     },
                     onBagClicked = {
-                        scope.launch {
-                            searchViewModel.onBagClicked()
-                        }
+                       scope.launch {
+                          // searchViewModel.itemT.value = "bag"
+                           searchViewModel.onBagClicked()
+                       }
                     },
                     onClothesClicked = {
                         scope.launch {
+                          // searchViewModel.itemT.value = "clothe"
                             searchViewModel.onClotheClicked()
                         }
                     }
@@ -144,7 +163,7 @@ fun SearchScreen(
                     onListBackClicked = {
                         searchViewModel.onBackClicked()
                     },
-                    items = searchUiState.item,
+                    items = searchUiState.item.collectAsLazyPagingItems(),
                     onItemClicked = onItemClicked,
                     navigateToSearch = navigateToSearch,
                     navigateToCart = navigateToCart,
@@ -164,8 +183,8 @@ fun SearchScreen(
 
 @Composable
 private fun SearchItemList(
-    items: List<ProductItem>,
-    onItemClicked: (Int) -> Unit,
+    items: List<Item>,
+    onItemClicked: (String) -> Unit,
     onBuyClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -190,8 +209,8 @@ private fun SearchItemList(
 
 @Composable
 private fun SearchProduct(
-    item: ProductItem,
-    onItemClicked: (Int) -> Unit,
+    item: Item,
+    onItemClicked: (String) -> Unit,
     onBuyClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -355,7 +374,6 @@ fun SearchInputFiled(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_50)))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,

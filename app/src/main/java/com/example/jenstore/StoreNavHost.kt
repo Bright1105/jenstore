@@ -30,6 +30,10 @@ import com.example.jenstore.ui.screens.profile.account.notification.Notification
 import com.example.jenstore.ui.screens.profile.account.orders.OrdersScreen
 import com.example.jenstore.ui.screens.profile.account.promotion.PromotionScreen
 import com.example.jenstore.ui.screens.profile.account.saveitems.SaveItemsScreen
+import com.example.jenstore.ui.screens.profile.createAccount.RegisterAccountViewModel
+import com.example.jenstore.ui.screens.profile.createAccount.RegisterScreen
+import com.example.jenstore.ui.screens.profile.loginAccount.LoginScreen
+import com.example.jenstore.ui.screens.profile.loginAccount.LoginViewModel
 import com.example.jenstore.ui.screens.search.SearchScreen
 import com.example.jenstore.ui.screens.search.SearchViewModel
 import com.example.jenstore.ui.screens.setting.SettingScreen
@@ -47,6 +51,8 @@ fun StoreNavHost(
     homeViewModel: HomeViewModel,
     productDetailsViewModel: ProductDetailsViewModel,
     feedViewModel: FeedViewModel,
+    loginViewModel: LoginViewModel,
+    registerAccountViewModel: RegisterAccountViewModel,
     modifier: Modifier = Modifier
 ) {
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
@@ -98,7 +104,8 @@ fun StoreNavHost(
                         productDetailsViewModel.productItemById(it)
                         navController.navigate("${ProductDetails.route}/$it")
                     }
-                }
+                },
+                homeViewModel = homeViewModel
             )
         }
         composable(route = MyCart.route) {
@@ -106,6 +113,12 @@ fun StoreNavHost(
                 allScreen = allScreen,
                 onTabClicked = onTabClicked,
                 currentScreen = route,
+                onItemClicked = {
+                    scope.launch {
+                        productDetailsViewModel.productItemById(it.toString())
+                        navController.navigate("${ProductDetails.route}/$it")
+                    }
+                }
             )
         }
         composable(route = Profile.route) {
@@ -139,6 +152,9 @@ fun StoreNavHost(
                 },
                 onAddressClicked = {
                     navController.navigateSingleTopTo(it.route)
+                },
+                onLoginClicked = {
+                    navController.navigateSingleTopTo(it.route)
                 }
             )
         }
@@ -162,10 +178,12 @@ fun StoreNavHost(
             )
         }
         composable(route = Login.route) {
-
+            LoginScreen(
+                loginViewModel = loginViewModel
+            )
         }
         composable(route = Register.route) {
-
+            RegisterScreen(registerAccountViewModel = registerAccountViewModel)
         }
         composable(route = ForgetPassword.route) {
 
@@ -173,7 +191,7 @@ fun StoreNavHost(
         composable(
             route = ProductDetails.routeWithArgs,
             arguments = listOf(navArgument(ProductDetails.itemIdArg) {
-                type = NavType.IntType
+                type = NavType.StringType
             })
         ) {
             ProductDetailsScreen(
@@ -185,6 +203,7 @@ fun StoreNavHost(
                 onCartClicked = {
                     navController.navigateSingleTopTo(MyCart.route)
                 },
+                productDetailsViewModel = productDetailsViewModel
             )
         }
         composable(route = Orders.route) {

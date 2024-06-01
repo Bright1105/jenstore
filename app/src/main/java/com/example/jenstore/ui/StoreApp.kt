@@ -31,6 +31,8 @@ import com.example.jenstore.ui.screens.cart.JenStoreDivider
 import com.example.jenstore.ui.screens.feed.FeedViewModel
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
+import com.example.jenstore.ui.screens.profile.createAccount.RegisterAccountViewModel
+import com.example.jenstore.ui.screens.profile.loginAccount.LoginViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
 
 
@@ -39,6 +41,8 @@ fun StoreApp() {
     val homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val feedViewModel: FeedViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val loginViewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val registerAccountViewModel: RegisterAccountViewModel = viewModel(factory = AppViewModelProvider.Factory)
     
     JenstoreTheme {
         val navController = rememberNavController()
@@ -57,7 +61,9 @@ fun StoreApp() {
             },
             homeViewModel = homeViewModel,
             productDetailsViewModel = productDetailsViewModel,
-            feedViewModel = feedViewModel
+            feedViewModel = feedViewModel,
+            loginViewModel = loginViewModel,
+            registerAccountViewModel = registerAccountViewModel
         )
     }
 }

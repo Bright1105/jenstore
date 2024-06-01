@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.example.jenstore.Account
 import com.example.jenstore.Address
 import com.example.jenstore.Inbox
+import com.example.jenstore.Login
 import com.example.jenstore.MyCart
 import com.example.jenstore.Notifications
 import com.example.jenstore.Orders
@@ -78,6 +79,7 @@ fun ProfileScreen(
     onAddressClicked: (StoreDestinations) -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
+    onLoginClicked: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -112,7 +114,8 @@ fun ProfileScreen(
             ProfileAccountSetting(
                 onAccountClicked = onAccountClicked,
                 onAddressClicked = onAddressClicked,
-                onLogOutClicked = {}
+                onLogOutClicked = {},
+                onLoginClicked = onLoginClicked
             )
         }
     }
@@ -123,7 +126,8 @@ fun ProfileScreen(
 private fun ProfileAccountSetting(
     onAccountClicked: (StoreDestinations) -> Unit,
     onAddressClicked: (StoreDestinations) -> Unit,
-    onLogOutClicked: () -> Unit
+    onLogOutClicked: () -> Unit,
+    onLoginClicked: (StoreDestinations) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -157,12 +161,14 @@ private fun ProfileAccountSetting(
             )
         }
         TextButton(
-            onClick = onLogOutClicked,
+            onClick = {
+                      onLoginClicked(Login)
+            },
             modifier = Modifier
                 .align(alignment = Alignment.CenterHorizontally)
         ) {
             Text(
-                text = stringResource(R.string.logOut),
+                text =  "log in",
                 style = MaterialTheme.typography.bodyLarge
             )
         }

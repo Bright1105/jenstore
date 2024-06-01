@@ -101,4 +101,6 @@
     </plurals>
     <string name="cart_order_header">Order (%1s)</string>
     <string name="delete">delete</string>
+    <string name="share">share</string>
+    <string name="note">Note: you can order more than the item available, only that the time of your items delivery will be longer. \ncontact jenny for more information.</string>
 </resources>

@@ -3,10 +3,12 @@ package com.example.jenstore
 import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,29 +20,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.jenstore.ui.StoreApp
+import com.example.jenstore.ui.screens.productDetails.AddEvent
+import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
-
+import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(
-            // This app is only ever in dark mode, so hard code detectDarkMode to true.
-            // SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT, detectDarkMode = { true }),
-        )
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent { StoreApp() }
-
-        //JenstoreTheme {
-        //                // A surface container using the 'background' color from the theme
-        //                Surface(
-        //                    modifier = Modifier.fillMaxSize(),
-        //                    color = MaterialTheme.colorScheme.background
-        //                ) {
-        //                    StoreApp()
-        //                }
-        //            }
     }
 }
 

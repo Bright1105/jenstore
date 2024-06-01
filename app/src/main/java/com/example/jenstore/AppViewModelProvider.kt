@@ -5,15 +5,14 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.paging.ExperimentalPagingApi
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import com.example.jenstore.ui.screens.cart.CartViewModel
 import com.example.jenstore.ui.screens.feed.FeedViewModel
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.screens.profile.ProfileVIewModel
+import com.example.jenstore.ui.screens.profile.createAccount.RegisterAccountViewModel
+import com.example.jenstore.ui.screens.profile.loginAccount.LoginViewModel
 import com.example.jenstore.ui.screens.search.SearchViewModel
-import retrofit2.create
 
 
 /**
@@ -72,6 +71,14 @@ object AppViewModelProvider {
                 //                    }
                 //                )
             )
+        }
+
+        initializer {
+            LoginViewModel(repository = storeApplication().container.repository)
+        }
+
+        initializer {
+            RegisterAccountViewModel(repository = storeApplication().container.repository)
         }
     }
 }

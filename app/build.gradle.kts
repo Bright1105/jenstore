@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp") version "1.9.21-1.0.15"
     id("kotlinx-serialization")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -73,6 +74,12 @@ dependencies {
     implementation("androidx.compose.material3:material3-window-size-class:1.2.1")
     implementation("androidx.wear.compose:compose-material:1.3.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+
+    // firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation("com.google.firebase:firebase-firestore")
+
 
     // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.1.1")

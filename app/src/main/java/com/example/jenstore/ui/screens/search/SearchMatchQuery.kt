@@ -1,7 +1,5 @@
 package com.example.jenstore.ui.screens.search
 
-import com.example.jenstore.data.model.ProductItem
-
 
 interface SearchMatchQuery {
 

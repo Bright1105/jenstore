@@ -1,12 +1,11 @@
 package com.example.jenstore.ui.screens.productDetails
 
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,14 +16,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,8 +39,10 @@ import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,38 +58,66 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.MyCart
 import com.example.jenstore.R
+import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
-import com.example.jenstore.data.model.ProductItem
+import com.example.jenstore.data.model.Item
 import com.example.jenstore.ui.screens.cart.CartProductQ
-import com.example.jenstore.ui.screens.cart.JenStoreDivider
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 
 @Composable
 fun ProductDetailsScreen(
-    item: ProductItem?,
+    item: Item?,
     route: StoreDestinations,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
-    productDetailsViewModel: ProductDetailsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    productDetailsViewModel: ProductDetailsViewModel
 ) {
     val scope: CoroutineScope = rememberCoroutineScope()
     val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
 
+   val context = LocalContext.current
+
+    val error = Errors()
+
+    LaunchedEffect(productDetailsViewModel.addEvent) {
+        productDetailsViewModel.addEvent
+            .collect { addEvent ->
+                when (addEvent) {
+                    is AddEvent.Info -> {
+                        Toast.makeText(context, addEvent.message, Toast.LENGTH_LONG).show()
+                    }
+                    is AddEvent.Error -> {
+                        Toast.makeText(context, addEvent.throwable.message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+    }
+
+
     Column {
+
+        error.message.let {  message ->
+            if (message != null) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+
         item?.let {
             ProductDetails(
                 count = productDetailsViewModel.countItem.intValue,
@@ -95,10 +129,10 @@ fun ProductDetailsScreen(
                 },
                 item = it,
                 onAddToCartClicked = {
-                         scope.launch {
-                             productDetailsViewModel.onAddToCartClicked(it)
-                             onCartClicked(MyCart)
-                         }
+                        // scope.launch {
+                    //                             productDetailsViewModel.onAddToCartClicked(it)
+                    //                             onCartClicked(MyCart)
+                    //                         }
                 },
                 onBackClicked = onBackClicked,
                 onCartClicked = onCartClicked,
@@ -119,9 +153,9 @@ fun ProductDetails(
     count: Int,
     decreaseItemCount: () -> Unit,
     increaseItemCount: () -> Unit,
-    item: ProductItem,
+    item: Item,
     route: StoreDestinations,
-    onAddToCartClicked: (ProductItem) -> Unit,
+    onAddToCartClicked: (Item) -> Unit,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onFavouriteClicked: () -> Unit,
@@ -129,15 +163,13 @@ fun ProductDetails(
     totalPrice: Int,
     modifier: Modifier = Modifier
 ) {
+
     Scaffold(
         topBar = {
-            ProductDetailsTopBarImage(
-                image = item,
+            ProductDetailsTopBar(
                 onBackClicked = onBackClicked,
-                onCartClicked = onCartClicked,
-                onFavouriteClicked = onFavouriteClicked,
-                route = route,
-                onFavourite = onFavourite
+                onSearchClicked = {},
+                onCartClicked = onCartClicked
             )
         },
         bottomBar = {
@@ -154,6 +186,23 @@ fun ProductDetails(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = dimensionResource(R.dimen.dp_10),
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_10))
+            ) {
+                items(item.imageUri) { img ->
+                    ProductDetailsImage(
+                        image = img,
+                        imageName = item.name
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_15)))
             ProductDetailsTextAndItem(
                 item = item,
                 count = count,
@@ -161,7 +210,8 @@ fun ProductDetails(
                 onInCreaseClicked = increaseItemCount
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
-            JenStoreDivider()
+            ProductDetailsNote()
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             ProductDetailsDescription(item = item)
         }
     }
@@ -169,24 +219,36 @@ fun ProductDetails(
 
 @Composable
 private fun ProductDetailsDescription(
-    item: ProductItem,
+    item: Item,
     modifier: Modifier = Modifier
 ) {
-    Column {
-        Text(
-            text = stringResource(R.string.details),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .padding(start = dimensionResource(R.dimen.dp_10))
+    Card(
+        elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background),
+        shape = ShapeDefaults.Small,
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        Column(
+            modifier = modifier
+                .padding(dimensionResource(R.dimen.dp_10))
+        ) {
+            Text(
+                text = stringResource(R.string.details),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .padding(start = dimensionResource(R.dimen.dp_10))
 
-        )
-        Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_15)))
-        Text(
-            text = item.description,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .padding(start = dimensionResource(R.dimen.dp_15))
-        )
+            )
+            Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_15)))
+            Text(
+                text = item.description,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .padding(start = dimensionResource(R.dimen.dp_15))
+            )
+        }
     }
 }
 
@@ -194,20 +256,23 @@ private fun ProductDetailsDescription(
 // try using column in the box
 @Composable
 private fun ProductDetailsTextAndItem(
-    item: ProductItem,
+    item: Item,
     count: Int,
     onDecreaseClicked: () -> Unit,
     onInCreaseClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Card(
+        elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background),
+        shape = ShapeDefaults.Small,
         modifier = modifier
             .fillMaxWidth()
             .fillMaxHeight()
     ) {
         Column(modifier = modifier) {
             Text(
-                text = item.title.uppercase(),
+                text = item.name.uppercase(),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier
@@ -217,60 +282,6 @@ private fun ProductDetailsTextAndItem(
                         bottom = dimensionResource(R.dimen.dp_5)
                     )
             )
-            Row {
-                Text(
-                    text = item.brand.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier
-                        .padding(
-                            start = dimensionResource(R.dimen.dp_20),
-                            bottom = dimensionResource(R.dimen.dp_5)
-                        )
-                        .weight(1f)
-                )
-                ProductQualityIncrease(
-                    count = count,
-                    onDecreaseClicked = onDecreaseClicked,
-                    onInCreaseClicked = onInCreaseClicked,
-                    isButtonEnable = !(count >= item.itemAvailable || count <= item.itemAvailable),  //,/count >= item.items.itemAvailable,
-                    modifier = Modifier
-                        .padding(
-                            bottom = dimensionResource(R.dimen.dp_5),
-                        )
-                )
-                // set the search screen
-            }
-            Row {
-                Text(
-                    text = "(50 Likes)",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(
-                            start = dimensionResource(R.dimen.dp_20)
-                        )
-                )
-                Text(
-                    text = stringResource(R.string.available),
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier
-                        .padding(
-                            end = dimensionResource(R.dimen.dp_20),
-                        )
-                )
-                Text(
-                    text = item.itemAvailable.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(
-                            top = dimensionResource(R.dimen.dp_5),
-                            end = dimensionResource(R.dimen.dp_20)
-                        )
-                )
-            }
             Row {
                 Icon(
                     painter = painterResource(R.drawable.naira_sign),
@@ -292,16 +303,122 @@ private fun ProductDetailsTextAndItem(
                 )
 
             }
+            Row {
+                Text(
+                    text = stringResource(R.string.brand),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .padding(
+                            start = dimensionResource(R.dimen.dp_20),
+                            bottom = dimensionResource(R.dimen.dp_5)
+                        )
+                )
+                Text(
+                    text = item.brand.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier
+                        .padding(
+                            start = dimensionResource(R.dimen.dp_5),
+                            bottom = dimensionResource(R.dimen.dp_5)
+                        )
+                        .weight(1f)
+                )
+                ProductQualityIncrease(
+                    count = count,
+                    onDecreaseClicked = onDecreaseClicked,
+                    onInCreaseClicked = onInCreaseClicked,
+                    modifier = Modifier
+                        .padding(
+                            bottom = dimensionResource(R.dimen.dp_5),
+                          //  start = dimensionResource(R.dimen.dp_20)
+                        )
+                )
+                // set the search screen
+            }
+            Text(
+                text = "${item.itemAvailable} items left",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(
+                        top = dimensionResource(R.dimen.dp_5),
+                        end = dimensionResource(R.dimen.dp_20),
+                        start = dimensionResource(R.dimen.dp_20)
+                    )
+            )
+            Row {
+                ProductDetailsLikeAndShareIcon(
+                    onClicked = {  },
+                    imageVector = Icons.Default.Share,
+                    contentDescription = R.string.share,
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                Column {
+                    ProductDetailsLikeAndShareIcon(
+                        onClicked = { /*TODO*/ },
+                        imageVector = Icons.Outlined.Favorite,
+                        contentDescription = R.string.favourite,
+                        modifier = Modifier
+                        //    .align(Alignment.End)
+                    )
+                    Text(
+                        text = "2242"
+                    )
+
+                }
+            }
         }
     }
 }
 
 @Composable
+private fun ProductDetailsNote() {
+    Card(
+        elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
+        shape = ShapeDefaults.Small,
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        Text(
+            text = stringResource(R.string.note),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Justify,
+            modifier = Modifier
+                .padding(dimensionResource(R.dimen.dp_10))
+        )
+    }
+}
+
+@Composable
+private fun ProductDetailsLikeAndShareIcon(
+    onClicked: () -> Unit,
+    imageVector: ImageVector,
+    contentDescription: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier) {
+        IconButton(
+            onClick = onClicked,
+            modifier = Modifier
+        ) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = stringResource(contentDescription),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+@Composable
 private fun ProductQualityIncrease(
     count: Int,
     onInCreaseClicked: () -> Unit,
     onDecreaseClicked: () -> Unit,
-    isButtonEnable: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -312,7 +429,7 @@ private fun ProductQualityIncrease(
             onClicked = onDecreaseClicked,
             imageVector = Icons.Default.Remove,
             contentDescription = R.string.decrease,
-            isButtonEnable = isButtonEnable,
+            isButtonEnable = count > 1,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
         )
@@ -337,7 +454,6 @@ private fun ProductQualityIncrease(
             onClicked = onInCreaseClicked,
             imageVector = Icons.Default.Add,
             contentDescription = R.string.increase,
-            isButtonEnable = isButtonEnable,
             modifier = Modifier.align(Alignment.CenterVertically)
         )
     }
@@ -373,73 +489,90 @@ private fun IconButtonQ(
 }
 
 @Composable
-private fun ProductDetailsTopBarImage(
-    image: ProductItem,
-    route: StoreDestinations,
-    onBackClicked: () -> Unit,
-    onCartClicked: (StoreDestinations) -> Unit,
-    onFavouriteClicked: () -> Unit,
-    onFavourite: Boolean,
+private fun ProductDetailsImage(
+    image: String,
+    imageName: String,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        contentAlignment = Alignment.TopEnd,
-        modifier = modifier
+    Card(
+        elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_5)),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .width(dimensionResource(R.dimen.dp_300))
+            .height(dimensionResource(R.dimen.dp_300))
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image.image}")
+                .data(image)
                 .crossfade(true)
                 .build(),
-            contentDescription = image.title,
+            contentDescription = imageName,
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.ic_broken_image),
             placeholder = painterResource(R.drawable.loading_img),
             modifier = modifier
                 .fillMaxWidth()
-                .height(dimensionResource(R.dimen.dp_300))
+                .fillMaxHeight()
         )
+    }
+}
+@Composable
+private fun ProductDetailsTopBar(
+    onBackClicked: () -> Unit,
+    onSearchClicked: (StoreDestinations) -> Unit,
+    onCartClicked: (StoreDestinations) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TopAppBar(
+        elevation = dimensionResource(R.dimen.dp_10),
+        backgroundColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .padding(
+                top = dimensionResource(R.dimen.dp_30)
+            ),
+        navigationIcon = {
+            ProductDetailsTopAppBarIcons(
+                onClicked = onBackClicked,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = R.string.back
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.details),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        },
+        actions = {
+            ProductDetailsTopAppBarIcons(
+                onClicked = { onSearchClicked(Search) },
+                imageVector = Icons.Default.Search,
+                contentDescription = R.string.search
+            )
+            ProductDetailsTopAppBarIcons(
+                onClicked = { onCartClicked(MyCart) },
+                imageVector = Icons.Default.ShoppingCart,
+                contentDescription = R.string.cart
+            )
+        }
+    )
+}
 
-        IconButtonBar(
-            onValueChanged = onBackClicked,
-            imageVector = Icons.AutoMirrored.Default.ArrowBack,
-            contentDescription = R.string.back,
-            color = IconButtonDefaults.iconButtonColors(MaterialTheme.colorScheme.onBackground),
-            tint = MaterialTheme.colorScheme.background,
-            modifier = modifier
-                .align(alignment = Alignment.TopStart)
-                .padding(
-                    top = dimensionResource(R.dimen.dp_35),
-                    start = dimensionResource(R.dimen.dp_15)
-                )
-        )
-
-        IconButtonBar(
-            onValueChanged = { onCartClicked(route) },
-            imageVector = Icons.Default.ShoppingCart,
-            contentDescription = R.string.cart,
-            color = IconButtonDefaults.iconButtonColors(MaterialTheme.colorScheme.background),
+@Composable
+private fun ProductDetailsTopAppBarIcons(
+    onClicked: () -> Unit,
+    imageVector: ImageVector,
+    contentDescription: Int,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onClicked
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = stringResource(contentDescription),
             tint = MaterialTheme.colorScheme.onBackground,
-            modifier = modifier
-                .padding(
-                    top = dimensionResource(R.dimen.dp_35),
-                    end = dimensionResource(R.dimen.dp_15)
-                )
-        )
-
-        IconButtonBar(
-            onValueChanged = onFavouriteClicked,
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = R.string.favourite,
-            color = IconButtonDefaults.iconButtonColors(MaterialTheme.colorScheme.background),
-            tint = if (onFavourite) Color.Red else MaterialTheme.colorScheme.onBackground,
-            modifier = modifier
-                .align(alignment = Alignment.BottomEnd)
-                .padding(
-                    end = dimensionResource(R.dimen.dp_15),
-                    bottom = dimensionResource(R.dimen.dp_15)
-                )
-
+            modifier = modifier,
         )
     }
 }
@@ -477,15 +610,15 @@ private fun IconButtonBar(
 
 @Composable
 private fun ProductDetailsBottomBar(
-    item: ProductItem,
+    item: Item,
     totalPrice: Int,
-    onAddToCartClicked: (ProductItem) -> Unit,
+    onAddToCartClicked: (Item) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row {
         Button(
             onClick = { /*TODO*/ },
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onBackground),
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
             modifier = modifier
                 .width(dimensionResource(R.dimen.dp_180))
                 .padding(
@@ -504,7 +637,7 @@ private fun ProductDetailsBottomBar(
                     Icon(
                         painter = painterResource(R.drawable.naira_sign),
                         contentDescription = stringResource(R.string.naira),
-                        tint = MaterialTheme.colorScheme.onBackground,
+                        tint = MaterialTheme.colorScheme.background,
                         modifier = modifier
                             .size(dimensionResource(R.dimen.dp_15))
                     )
@@ -518,7 +651,7 @@ private fun ProductDetailsBottomBar(
         }
         Button(
             onClick = { onAddToCartClicked(item) },
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onBackground),
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
             modifier = modifier
                 .width(dimensionResource(R.dimen.dp_200))
                 .padding(
