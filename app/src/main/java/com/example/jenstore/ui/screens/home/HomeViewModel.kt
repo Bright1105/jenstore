@@ -2,21 +2,23 @@ package com.example.jenstore.ui.screens.home
 
 
 
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.filter
-import com.example.jenstore.data.Repository
+import com.example.jenstore.data.local.cart.OrdersEntity
+import com.example.jenstore.data.repository.FirebaseRepository
 import com.example.jenstore.data.model.Item
+import com.google.firebase.FirebaseError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -29,14 +31,12 @@ sealed interface HomeUiState {
 }
 
 class HomeViewModel(
-    private val repository: Repository,
+    private val firebaseRepository: FirebaseRepository,
 ) : ViewModel() {
 
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
-
-    val pressed = mutableStateOf(false)
 
 
     var homeUiState: HomeUiState by mutableStateOf(HomeUiState.Loading)
@@ -47,138 +47,113 @@ class HomeViewModel(
         getProduct()
     }
 
-    //val products = repository.getProductsPagination().cachedIn(viewModelScope)
+ //   var type = mutableStateOf("")
 
-  //  val itemType = mutableStateOf("")
 
-    private var type = mutableStateOf("")
     fun getProduct() {
         viewModelScope.launch {
-            homeUiState = HomeUiState.Success(repository.getProduct())
+            homeUiState = try {
+                HomeUiState.Loading
+                HomeUiState.Success(firebaseRepository.getProducts())
+            } catch (e: Throwable) {
+                HomeUiState.Error(e.message)
+            }
         }
     }
+
     fun refreshItems() {
-        _uiState.update {
-            it.copy(
-                isRefreshing = true
-            )
-        }
-       // getItem()
-       // _uiState.update {
-        //            it.copy(isRefreshing = false)
-        //        }
+       CoroutineScope(Dispatchers.IO).launch {
+           _uiState.update {
+               it.copy(
+                   isRefreshing = true
+               )
+           }
+           getProduct()
+          delay(5000)
+           _uiState.update {
+               it.copy(
+                   isRefreshing = false
+               )
+           }
+       }
     }
 
 
     fun seeHairAllClicked() {
        CoroutineScope(Dispatchers.IO).launch {
-           type.value = "hair"
-           _uiState.update {
-               it.copy(
-                   item = repository.getProductsPagination().map {  paging ->
-                       paging.filter {  hair ->
-                           hair.itemType == type.value
-                       }
-                   },
-                   isShowingHomePage = false
-
-                   //itemType =  repository.getProductsPagination()
-                   //                        .map { paging ->
-                   //                            paging.filter {   hair ->
-                   //                                hair.itemType == "hair"
-                   //                            }
-                   //                        }
-                   //                        .cachedIn(viewModelScope),
-
-
-                   //repository.getProduct().filter { hair ->
-                   //                  hair.itemType == "hair"
-                   //            }
-               )
+//           type.value = "hair"
+           try {
+               _uiState.update {
+                   it.copy(
+                       typeOfProduct = "hair",
+                       item = firebaseRepository.getProductsPagination(),
+                       isShowingHomePage = false
+                   )
+               }
+           } catch (e: Throwable) {
+               e.message
            }
        }
     }
 
     fun seeBagALlClicked() {
         CoroutineScope(Dispatchers.IO).launch {
-            type.value = "bag"
-            _uiState.update {
-                it.copy(
-                    item = repository.getProductsPagination().map {  paging ->
-                        paging.filter {  hair ->
-                            hair.itemType == type.value
-                        }
-                    },
-                    isShowingHomePage = false
-
-                        //repository.getProductsPagination()
-                    //                        .map { paging ->
-                    //                            paging.filter {   bag ->
-                    //                                bag.itemType == "bag"
-                    //                            }
-                    //                        }
-                    //                        .cachedIn(viewModelScope)
-                )
+ //           type.value = "bag"
+            try {
+                _uiState.update {
+                    it.copy(
+                        typeOfProduct = "bag",
+                        item = firebaseRepository.getProductsPagination(),
+                        isShowingHomePage = false
+                    )
+                }
+            } catch (e: Throwable) {
+                e.message
             }
         }
     }
 
 
-    fun seeShoeALlClicked() {
+    fun seeAccessoriesClicked() {
         CoroutineScope(Dispatchers.IO).launch {
-            type.value = "shoe"
-            _uiState.update {
-                it.copy(
-                    item = repository.getProductsPagination().map {  paging ->
-                        paging.filter {  hair ->
-                            hair.itemType == type.value
-                        }
-                    },
-                    isShowingHomePage = false,
-
-                        //repository.getProductsPagination()
-                    //                        .map { paging ->
-                    //                            paging.filter {   shoe ->
-                    //                                shoe.itemType == "shoe"
-                    //                            }
-                    //                        }
-                    //                        .cachedIn(viewModelScope)
-                )
+           // type.value = "shoe"
+            try {
+                _uiState.update {
+                    it.copy(
+                        typeOfProduct = "Accessories",
+                        item = firebaseRepository.getProductsPagination(),
+                        isShowingHomePage = false
+                    )
+                }
+            } catch (e: Throwable) {
+                e.message
             }
         }
     }
 
-    fun seeClotheALlClicked() {
+    fun seeMakeupALlClicked() {
         CoroutineScope(Dispatchers.IO).launch {
-            type.value = "clothe"
-            _uiState.update {
-                it.copy(
-                    item = repository.getProductsPagination().map {  paging ->
-                        paging.filter {  hair ->
-                            hair.itemType == type.value
-                        }
-                    },
-                    isShowingHomePage = false
-
-
-                    //repository.getProductsPagination()
-                    //                        .map { paging ->
-                    //                            paging.filter {   clothe ->
-                    //                                clothe.itemType == "clothe"
-                    //                            }
-                    //                        }
-                    //                        .cachedIn(viewModelScope)
-                )
+         //   type.value = "clothe"
+            try {
+                _uiState.update {
+                    it.copy(
+                        typeOfProduct = "Makeup",
+                        item = firebaseRepository.getProductsPagination(),
+                        isShowingHomePage = false
+                    )
+                }
+            } catch (e: Throwable) {
+                e.message
             }
         }
     }
 
 
     fun listBackClicked() {
-        type.value = ""
         _uiState.update {
             it.copy(
-                item = flowOf(),
+                item = null,
+                typeOfProduct = null,
                 isShowingHomePage = true,
             )
         }

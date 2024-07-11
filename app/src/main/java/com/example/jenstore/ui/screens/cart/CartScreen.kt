@@ -34,6 +34,7 @@ import androidx.compose.material.Divider
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
@@ -46,6 +47,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -90,12 +93,9 @@ fun CartScreen(
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
-    onItemClicked: (Int) -> Unit,
-    //removeItem: (Int) -> Unit,
-    //    increaseItemCount: (Int) -> Unit,
-    //    decreaseItemCount: (Int) -> Unit,
-    //onItemClicked: (Int) -> Unit,
-    cartViewModel: CartViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    onItemClicked: (String) -> Unit,
+    navigateBack: () -> Unit,
+    cartViewModel: CartViewModel
 ) {
 
     val cartUiState by cartViewModel.cartUiState.collectAsState()
@@ -103,6 +103,12 @@ fun CartScreen(
     val scope: CoroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        topBar = {
+            CartAppBar(
+                items = cartUiState.items,
+                navigateBack = navigateBack
+            )
+        },
         bottomBar = {
             Column {
                 CartBottomBarCheckout(
@@ -128,14 +134,11 @@ fun CartScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CartContent(
+private fun CartAppBar(
     items: List<OrdersEntity>,
-    removeItem: (OrdersEntity) -> Unit,
-    increaseItemCount: (OrdersEntity) -> Unit,
-    decreaseItemCount: (OrdersEntity) -> Unit,
-    onItemClicked: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    navigateBack: () -> Unit
 ) {
     val resource = LocalContext.current.resources
     val itemCount = remember(items.size, resource) {
@@ -144,14 +147,19 @@ private fun CartContent(
             items.size, items.size
         )
     }
-
-    LazyColumn(modifier) {
-        item {
-            Spacer(
-                modifier = Modifier.windowInsetsTopHeight(
-                    WindowInsets.statusBars.add(WindowInsets(top = 1.dp))
+    CenterAlignedTopAppBar(
+        navigationIcon = {
+            IconButton(
+                onClick = navigateBack
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = MaterialTheme.colorScheme.primary
                 )
-            )
+            }
+        },
+        title = {
             Text(
                 text = stringResource(R.string.cart_order_header, itemCount),
                 style = MaterialTheme.typography.titleMedium,
@@ -164,6 +172,21 @@ private fun CartContent(
                     .wrapContentHeight()
             )
         }
+    )
+}
+
+@Composable
+private fun CartContent(
+    items: List<OrdersEntity>,
+    removeItem: (OrdersEntity) -> Unit,
+    increaseItemCount: (OrdersEntity) -> Unit,
+    decreaseItemCount: (OrdersEntity) -> Unit,
+    onItemClicked: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+
+
+    LazyColumn(modifier) {
         items(items, key = { item -> item.id } ) { order ->
             SwipeDisMissItem(
                 background = { offsetX ->
@@ -274,7 +297,7 @@ private fun CartItem(
     removeItem: (OrdersEntity) -> Unit,
     increaseItemCount: (OrdersEntity) -> Unit,
     decreaseItemCount: (OrdersEntity) -> Unit,
-    onItemClicked: (Int) -> Unit,
+    onItemClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     ConstraintLayout(
@@ -284,7 +307,7 @@ private fun CartItem(
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 24.dp)
     ) {
-        val (divider , image, title, brand, priceSpacer, nairaIcon, price, remove, quantity) = createRefs()
+        val (divider , image, title, brand, priceSpacer, price, remove, quantity) = createRefs()
         createVerticalChain(title, brand, priceSpacer, price, chainStyle = ChainStyle.Packed)
         CartProductImage(
             image = item.image,
@@ -298,17 +321,21 @@ private fun CartItem(
         )
         Text(
             text = item.title,
-            style = MaterialTheme.typography.displayLarge,
+            style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.constrainAs(title) {
-                linkTo(
-                    start = image.end,
-                    startMargin = 16.dp,
-                    end = remove.start,
-                    endMargin = 16.dp,
-                    bias = 0f
-                )
-            }
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            modifier = Modifier
+                .width(dimensionResource(R.dimen.dp_180))
+                .constrainAs(title) {
+                    linkTo(
+                        start = image.end,
+                        startMargin = 16.dp,
+                        end = remove.start,
+                        endMargin = 16.dp,
+                        bias = 0f
+                    )
+                }
         )
         IconButton(
             onClick = { removeItem(item) },
@@ -347,10 +374,8 @@ private fun CartItem(
                     linkTo(top = brand.bottom, bottom = price.top)
                 }
         )
-        Text(
-            text = item.price.toString(),
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.primary,
+        CartPriceAndIcon(
+            item = item,
             modifier = Modifier.constrainAs(price) {
                 linkTo(
                     start = image.end,
@@ -368,7 +393,7 @@ private fun CartItem(
             modifier = Modifier.constrainAs(quantity) {
                 baseline.linkTo(price.baseline)
                 end.linkTo(parent.end)
-            }
+            },
         )
         JenStoreDivider(
             Modifier.constrainAs(divider) {
@@ -380,11 +405,35 @@ private fun CartItem(
 }
 
 @Composable
-private fun CartQuantitySelector(
+private fun CartPriceAndIcon(
+    item: OrdersEntity,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier) {
+        Icon(
+            painter = painterResource(R.drawable.naira_sign),
+            contentDescription = stringResource(R.string.naira),
+            modifier = Modifier
+                .alignBy(LastBaseline)
+                .size(dimensionResource(R.dimen.dp_15))
+                .padding(top = dimensionResource(R.dimen.dp_3))
+        )
+        Text(
+            text = item.price.toString(),
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+    }
+}
+
+@Composable
+fun CartQuantitySelector(
     count: Int,
     decreaseItemCount: () -> Unit,
     increaseItemCount: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconSize: Dp = dimensionResource(R.dimen.dp_30),
 ) {
     Row(modifier = modifier) {
         CompositionLocalProvider(value = LocalContentAlpha provides ContentAlpha.medium) {
@@ -400,12 +449,14 @@ private fun CartQuantitySelector(
                 onClicked =  decreaseItemCount,
                 imageVector = Icons.Default.Remove,
                 contentDescription = R.string.decrease,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier.align(Alignment.CenterVertically),
+                iconSize = iconSize,
+                isButtonEnable = count > 1
             )
             Crossfade(
                 targetState = count,
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
+                    .align(Alignment.CenterVertically), label = ""
             ) {
                 Text(
                     text = "$it",
@@ -420,7 +471,9 @@ private fun CartQuantitySelector(
                 onClicked = increaseItemCount,
                 imageVector = Icons.Default.Add,
                 contentDescription = R.string.increase,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier.align(Alignment.CenterVertically),
+                iconSize = iconSize,
+                isButtonEnable = count > 0
             )
         }
     }
@@ -543,16 +596,17 @@ fun CartProductQ(
     imageVector: ImageVector,
     contentDescription: Int,
     isButtonEnable: Boolean = true,
+    iconSize: Dp
 ) {
     IconButton(
         onClick = onClicked,
         enabled = isButtonEnable,
         modifier = modifier
-            .clip(CircleShape)
+            .clip(RectangleShape)
             .border(
-                dimensionResource(R.dimen.dp_3),
+                dimensionResource(R.dimen.dp_2),
                 MaterialTheme.colorScheme.primary,
-                CircleShape
+                RectangleShape
             )
             .size(dimensionResource(R.dimen.dp_20))
     ) {
@@ -561,7 +615,7 @@ fun CartProductQ(
             contentDescription = stringResource(contentDescription),
             tint = MaterialTheme.colorScheme.primary,
             modifier = modifier
-                .size(dimensionResource(R.dimen.dp_30))
+                .size(iconSize)
         )
     }
 }
@@ -574,7 +628,7 @@ private fun CartProductImage(
 ) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data("https://86gnbdfj-8000.uks1.devtunnels.ms/${image}")
+            .data(image)
             .crossfade(true)
             .build(),
         contentDescription = contentDescription,
@@ -623,11 +677,12 @@ private fun CartBottomBarCheckout(
 @Composable
 private fun CartPreview() {
     JenstoreTheme {
-        CartProductQ(
-            onClicked = { /*TODO*/ },
-            imageVector = Icons.Default.Add,
-            contentDescription = R.string.add
-        )
+//        CartProductQ(
+//            onClicked = { /*TODO*/ },
+//            imageVector = Icons.Default.Add,
+//            contentDescription = R.string.add,
+//
+//        )
     }
 }
 

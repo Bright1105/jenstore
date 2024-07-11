@@ -12,20 +12,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.outlined.List
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
@@ -39,21 +31,23 @@ import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jenstore.Account
 import com.example.jenstore.Address
+import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.Inbox
-import com.example.jenstore.Login
 import com.example.jenstore.MyCart
 import com.example.jenstore.Notifications
 import com.example.jenstore.Orders
@@ -79,15 +73,25 @@ fun ProfileScreen(
     onAddressClicked: (StoreDestinations) -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
-    onLoginClicked: (StoreDestinations) -> Unit,
-    modifier: Modifier = Modifier
+    restartApp: (StoreDestinations) -> Unit,
+    openAndPopup: (StoreDestinations, StoreDestinations) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.initialize(restartApp)
+    }
+
+    val userInfo = viewModel.userInfo?.collectAsState(initial = null)
+
     Scaffold(
 
         topBar = {
                  ProfileTopAppBar(
                      onCartClicked = onCartClicked,
-                     onSearchClicked = onSearchClicked
+                     onSearchClicked = onSearchClicked,
+                     email = viewModel.email,
+                     firstName = userInfo?.value?.firstName
                  )
         },
         bottomBar = {
@@ -114,8 +118,8 @@ fun ProfileScreen(
             ProfileAccountSetting(
                 onAccountClicked = onAccountClicked,
                 onAddressClicked = onAddressClicked,
-                onLogOutClicked = {},
-                onLoginClicked = onLoginClicked
+                profileViewModel = viewModel,
+                openAndPopup = openAndPopup
             )
         }
     }
@@ -124,10 +128,10 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileAccountSetting(
+    openAndPopup: (StoreDestinations, StoreDestinations) -> Unit,
     onAccountClicked: (StoreDestinations) -> Unit,
     onAddressClicked: (StoreDestinations) -> Unit,
-    onLogOutClicked: () -> Unit,
-    onLoginClicked: (StoreDestinations) -> Unit
+    profileViewModel: ProfileViewModel
 ) {
     Column(
         modifier = Modifier
@@ -160,17 +164,20 @@ private fun ProfileAccountSetting(
                 onValueClicked = { onAddressClicked(Address) }
             )
         }
-        TextButton(
-            onClick = {
-                      onLoginClicked(Login)
-            },
-            modifier = Modifier
-                .align(alignment = Alignment.CenterHorizontally)
-        ) {
-            Text(
-                text =  "log in",
-                style = MaterialTheme.typography.bodyLarge
-            )
+        if (profileViewModel.email != null) {
+            TextButton(
+                onClick = {
+                    profileViewModel.onSignOutClick(openAndPopup)
+                },
+                modifier = Modifier
+                    .align(alignment = Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text =  "Log out",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.Red
+                )
+            }
         }
     }
 }
@@ -279,6 +286,8 @@ private fun ProfileAccountIconAndInfo(
 
 @Composable
 private fun ProfileTopAppBar(
+    email: String?,
+    firstName: String?,
     onCartClicked: (StoreDestinations) -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
     modifier: Modifier = Modifier
@@ -324,33 +333,50 @@ private fun ProfileTopAppBar(
         Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_3)))
        Row(modifier = modifier) {
            Text(
-               text = "Welcome",
+               text = stringResource(R.string.welcome),
                style = MaterialTheme.typography.titleSmall,
                color = MaterialTheme.colorScheme.onBackground,
                modifier = Modifier
                    .padding(start = dimensionResource(R.dimen.dp_10))
            )
-           Text(
-               text = "Daniel",
-               style = MaterialTheme.typography.titleSmall,
-               color = MaterialTheme.colorScheme.primary,
-               fontSize = 16.sp,
-               modifier = Modifier
-                   .padding(
-                       horizontal = dimensionResource(R.dimen.dp_5),
-                       vertical = dimensionResource(R.dimen.dp_3)
+           firstName?.let {
+               Text(
+                   text = firstName,
+                   style = MaterialTheme.typography.titleSmall,
+                   color = MaterialTheme.colorScheme.primary,
+                   fontSize = 16.sp,
+                   modifier = Modifier
+                       .padding(
+                           horizontal = dimensionResource(R.dimen.dp_5),
+                           vertical = dimensionResource(R.dimen.dp_3)
                        )
-           )
+               )
+           }
        }
-        Text(
-            text = "Daniel11044@gmail.com",
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.Justify,
-            color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .padding(start = dimensionResource(R.dimen.dp_10))
+        if (email != null) {
+            Text(
+                text = email,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Justify,
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .padding(start = dimensionResource(R.dimen.dp_10))
+            )
+        } else {
+            Text(
+                text = "No Email",
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Justify,
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .padding(start = dimensionResource(R.dimen.dp_10))
+            )
+        }
+        JenStoreDivider(
+            thickness = dimensionResource(R.dimen.dp_2),
+            color = MaterialTheme.colorScheme.surfaceDim
         )
-        JenStoreDivider()
     }
 }

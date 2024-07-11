@@ -1,19 +1,30 @@
 package com.example.jenstore.ui.screens.feed
 
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Feed
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -21,25 +32,37 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSourceFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
+import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.Feed
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
@@ -49,14 +72,12 @@ import com.example.jenstore.ui.screens.common.StoreTabRow
 
 @Composable
 fun FeedScreen(
-    feedUiState: FeedUiState,
     allScreen: List<StoreDestinations>,
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
     viewModel: FeedViewModel
 ) {
 
-    val pagingFeeds = viewModel.feeds.collectAsLazyPagingItems()
 
     Scaffold(
         bottomBar = {
@@ -75,33 +96,9 @@ fun FeedScreen(
 
             FeedList(
                 //feeds = pagingFeeds,
-                feedViewModel = viewModel
+                feedViewModel = viewModel,
+                currentRoute = currentScreen
             )
-
-            //when (feedUiState) {
-            //                is FeedUiState.Success -> {
-            //                    FeedList(
-            //                        feeds = feedUiState.feed,
-            //                        feedViewModel = viewModel,
-            //                        modifier = Modifier.fillMaxSize()
-            //                    )
-            //                }
-            //
-            //                is FeedUiState.Loading -> {
-            //                    LoadingFeed(modifier = Modifier.fillMaxSize())
-            //                }
-            //
-            //                is FeedUiState.Error -> {
-            //                    Text(
-            //                        text = feedUiState.message,
-            //                        style = MaterialTheme.typography.titleMedium,
-            //                        modifier = Modifier
-            //                            .fillMaxSize()
-            //                            .align(Alignment.CenterHorizontally)
-            //                    )
-            //                }
-            //
-            //            }
         }
     }
 }
@@ -110,103 +107,30 @@ fun FeedScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FeedList(
-   // feeds: List<Feeds>,
-    feedViewModel: FeedViewModel,
-    modifier: Modifier = Modifier
+    currentRoute: StoreDestinations,
+    feedViewModel: FeedViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
-    val feedControlState: FeedControlState by feedViewModel.feedControlState.collectAsState()
-
-   // val context = LocalContext.current
-    //    LaunchedEffect(key1 = feeds.loadState) {
-    //        if (feeds.loadState.refresh is LoadState.Error) {
-    //            Toast.makeText(
-    //                context,
-    //                "Error: " + (feeds.loadState.refresh as LoadState.Error).error.message,
-    //                Toast.LENGTH_LONG
-    //            ).show()
-    //        }
-    //    }
-
-
-
-    val pagingFeeds = feedViewModel.feeds.collectAsLazyPagingItems()
-
-    val refresh = pagingFeeds.loadState.refresh
-    val append = pagingFeeds.loadState.append
-
-    val context = LocalContext.current
-    LaunchedEffect(key1 = pagingFeeds.loadState) {
-        if (pagingFeeds.loadState.refresh is LoadState.Error) {
-            Toast.makeText(context, "error:" + (pagingFeeds.loadState.refresh as LoadState.Error).error.message, Toast.LENGTH_LONG).show()
-        }
-    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-
-        if (pagingFeeds.loadState.refresh is LoadState.Loading) {
-            CircularProgressIndicator()
-        } else if (pagingFeeds.loadState.refresh is LoadState.Error) {
-
-            (pagingFeeds.loadState.refresh as LoadState.Error).error.message?.let { Text(text = it) }
-        }  else {
-
-            LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_35)),
-                flingBehavior = ScrollableDefaults.flingBehavior()
-            ) {
-
-                items(items = pagingFeeds, key = {feed -> feed.id}) { feed ->
-                    feed?.let {
-                        Feed(
-                            feed = feed.videoUri,
-                            feedViewModel = feedViewModel,
-                            feedControlState = feedControlState
-                        )
-                    }
-                }
-
-                item {
-                    if (pagingFeeds.loadState.append is LoadState.Loading) {
-                        CircularProgressIndicator()
-                    }
-                }
-                //items(feeds, key = { feed -> feed.id }) { feed ->
-                //                Feed(
-                //                    feed = feed.videoUri,
-                //                    feedViewModel = feedViewModel,
-                //                    feedControlState = feedControlState,
-                //                )
-                //            }
-            }
-        }
-
+        Feed(
+            feedViewModel = feedViewModel,
+            feedUiState = feedViewModel.feedUiState,
+            currentRoute = currentRoute
+        )
     }
 }
-// if (feeds.loadState.refresh is LoadState.Loading) {
-//            CircularProgressIndicator(
-//                modifier = Modifier.align(Alignment.Center)
-//            )
-//        } else {
-//
-//                item {
-//                    if (feeds.loadState.append is LoadState.Loading) {
-//                        CircularProgressIndicator()
-//                    }
-//                }
-//            }
-//        }
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun Feed(
+    feedUiState: FeedUiState,
+    currentRoute: StoreDestinations,
     modifier: Modifier = Modifier,
-    feed: String,
     feedViewModel: FeedViewModel,
-    feedControlState: FeedControlState,
 ) {
+
 
 
     var lifecycle by remember {
@@ -229,83 +153,140 @@ private fun Feed(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-    ) {
-        val mContent = LocalContext.current
 
-        val mExoPlayer = remember(mContent) {
-            ExoPlayer.Builder(mContent)
-                .build()
-                .also {
-                    it.trackSelectionParameters = it.trackSelectionParameters
-                        .buildUpon()
-                        .setMaxVideoSizeSd()
-                        .build()
+    ) {
+
+        when (feedUiState) {
+            is FeedUiState.Success -> {
+                val mContent = LocalContext.current
+
+                val videos: List<Feeds?> = feedUiState.feed
+
+
+
+                var isVisible by remember {
+                    mutableStateOf(true)
                 }
+
+
+
+                val mExoPlayer = remember(mContent) {
+                    ExoPlayer.Builder(mContent)
+                        .build()
+                        .also {
+                            it.trackSelectionParameters = it.trackSelectionParameters
+                                .buildUpon()
+                                .setMaxVideoSizeSd()
+                                .build()
+                        }
+                }
+
+
+                IconButton(
+                    onClick = {
+                        mExoPlayer.seekToNext()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = stringResource(R.string.next)
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        mExoPlayer.seekToPrevious()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .fillMaxHeight()
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = stringResource(R.string.previous)
+                    )
+                }
+                videos.forEach {
+                    AndroidView(
+                        factory = { content ->
+                            PlayerView(content).also { player ->
+                                player.player = mExoPlayer
+                                player.useController = false
+                                it?.videoUri?.let { it1 ->
+                                    MediaItem.fromUri(
+                                        it1
+                                    )
+                                }?.let { it2 -> player.player?.addMediaItem(it2) }
+                                if (currentRoute.route == Feed.route) {
+                                    player.player?.playWhenReady = true
+                                }
+                                player.player?.addListener(feedViewModel.playbackStateListener)
+                                player.player?.prepare()
+
+                            }
+
+                        },
+                        update = { playerUpdate ->
+                            when (lifecycle) {
+                                Lifecycle.Event.ON_PAUSE -> {
+                                    playerUpdate.onPause()
+                                    playerUpdate.player?.pause()
+                                   // playerUpdate.player?.removeListener(feedViewModel.playbackStateListener)
+                                    playerUpdate.player?.playWhenReady = false
+                                }
+
+                                Lifecycle.Event.ON_RESUME -> {
+                                    playerUpdate.onResume()
+                                }
+
+                                else -> Unit
+                            }
+                            if (currentRoute.route != Feed.route) {
+                                playerUpdate.player?.pause()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(10 / 20f)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        if (mExoPlayer.isPlaying) {
+                            mExoPlayer.pause()
+                            isVisible = false
+                        } else {
+                            mExoPlayer.play()
+                            isVisible = true
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxHeight()
+                        .alpha(if (isVisible) 0f else 1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = stringResource(R.string.feed),
+                        modifier = Modifier
+
+                    )
+                }
+
+
+            }
+            is FeedUiState.Loading -> {
+                LoadingFeed()
+            }
+            is FeedUiState.Error -> Unit
         }
 
-        AndroidView(
-            factory = { content ->
-                PlayerView(content).also { player ->
-                    player.player = mExoPlayer
-                    player.player?.addMediaItem(MediaItem.fromUri(feed)) //check
-                    player.useController = true
-                    player.player?.prepare()
-                }
-
-            },
-            update = { playerUpdate ->
-                when (lifecycle) {
-                    Lifecycle.Event.ON_PAUSE -> {
-                        playerUpdate.onPause()
-                        playerUpdate.player?.pause()
-                    }
-
-                    Lifecycle.Event.ON_RESUME -> {
-                        playerUpdate.onResume()
-                    }
-
-                    else -> Unit
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(10 / 20f)
-        )
-       //if (!feedControlState.play) {
-        //           IconButton(
-        //               onClick = {
-        //                   mExoPlayer.play()
-        //                   feedViewModel.playFeed()
-        //               },
-        //               modifier = Modifier
-        //                   .align(Alignment.Center)
-        //           ) {
-        //               Icon(
-        //                   imageVector = Icons.Default.PlayArrow,
-        //                   contentDescription = "play",
-        //                   tint = MaterialTheme.colorScheme.background,
-        //                   modifier = Modifier
-        //                       .width(dimensionResource(R.dimen.dp_100))
-        //                       .height(dimensionResource(R.dimen.dp_100))
-        //
-        //               )
-        //           }
-        //       } else {
-        //           IconButton(
-        //               onClick = {
-        //                   mExoPlayer.pause()
-        //                   feedViewModel.pauseFeed()
-        //               },
-        //               modifier = Modifier
-        //                   .align(Alignment.Center)
-        //           ) {
-        //
-        //           }
-        //       }
     }
 
 }
-
 
 @Composable
 private fun LoadingFeed(modifier: Modifier = Modifier) {

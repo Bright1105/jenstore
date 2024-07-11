@@ -3,8 +3,12 @@ package com.example.jenstore.ui.screens.productDetails
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,11 +23,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -45,7 +52,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,25 +71,36 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.material.CircularProgressIndicator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.jenstore.AppViewModelProvider
+import com.example.jenstore.Home
 import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.Item
+import com.example.jenstore.data.model.SavedItems
 import com.example.jenstore.ui.screens.cart.CartProductQ
+import com.example.jenstore.ui.screens.common.MyCartIcon
+import com.example.jenstore.ui.screens.profile.account.saveitems.SavedItemsViewModel
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 
 @Composable
 fun ProductDetailsScreen(
-    item: Item?,
+ //   item: Item?,
+    productDetails: ProductDetails,
     route: StoreDestinations,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
+    onSearchClicked: (StoreDestinations) -> Unit,
+    navigateToHome: (StoreDestinations) -> Unit,
     productDetailsViewModel: ProductDetailsViewModel
 ) {
     val scope: CoroutineScope = rememberCoroutineScope()
@@ -89,67 +110,83 @@ fun ProductDetailsScreen(
 
     val error = Errors()
 
-    LaunchedEffect(productDetailsViewModel.addEvent) {
-        productDetailsViewModel.addEvent
-            .collect { addEvent ->
-                when (addEvent) {
-                    is AddEvent.Info -> {
-                        Toast.makeText(context, addEvent.message, Toast.LENGTH_LONG).show()
-                    }
-                    is AddEvent.Error -> {
-                        Toast.makeText(context, addEvent.throwable.message, Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-    }
+//    LaunchedEffect(productDetailsViewModel.addEvent) {
+//        productDetailsViewModel.addEvent
+//            .collect { addEvent ->
+//                when (addEvent) {
+//                    is AddEvent.Info -> {
+//                        Toast.makeText(context, addEvent.message, Toast.LENGTH_SHORT).show()
+//                    }
+//                    is AddEvent.Error -> {
+//                        Toast.makeText(context, addEvent.throwable.message, Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+//            }
+//    }
 
 
     Column {
 
-        error.message.let {  message ->
-            if (message != null) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.titleSmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                )
-            }
-        }
+//        error.message.let {  message ->
+//            if (message != null) {
+//                Text(
+//                    text = message,
+//                    style = MaterialTheme.typography.titleSmall,
+//                    textAlign = TextAlign.Center,
+//                    modifier = Modifier
+//                        .align(Alignment.CenterHorizontally)
+//                )
+//            }
+//        }
 
-        item?.let {
-            ProductDetails(
-                count = productDetailsViewModel.countItem.intValue,
-                decreaseItemCount = {
-                    productDetailsViewModel.decreaseCountItem()
-                },
-                increaseItemCount = {
-                    productDetailsViewModel.increaseCountItem()
-                },
-                item = it,
-                onAddToCartClicked = {
-                        // scope.launch {
-                    //                             productDetailsViewModel.onAddToCartClicked(it)
-                    //                             onCartClicked(MyCart)
-                    //                         }
-                },
-                onBackClicked = onBackClicked,
-                onCartClicked = onCartClicked,
-                onFavouriteClicked = {
-                     productDetailsViewModel.onFavouriteClicked()
-                    // check when finish setting users
-                },
-                onFavourite = productDetailsViewModel.onFavourite.value,
-                route = route,
-                totalPrice = productDetailsViewModel.countItem.intValue,
-            )
-        }
+       when (productDetails) {
+
+           is ProductDetails.Success -> {
+               productDetails.currentProduct?.let {
+                   ProductDetailsItems(
+                       count = productDetailsViewModel.countItem.intValue,
+                       decreaseItemCount = {
+                           productDetailsViewModel.decreaseCountItem()
+                       },
+                       increaseItemCount = {
+                           productDetailsViewModel.increaseCountItem()
+                       },
+                       item = it,
+                       onAddToCartClicked = {
+                           scope.launch {
+                               productDetailsViewModel.onAddToCartClicked(it)
+                               onCartClicked(MyCart)
+                           }
+                       },
+                       onBackClicked = onBackClicked,
+                       onCartClicked = onCartClicked,
+                       onFavouriteClicked = {
+                           productDetailsViewModel.onFavouriteClicked()
+                           // check when finish setting users
+                       },
+                       onFavourite = productDetailsViewModel.onFavourite.value,
+                       route = route,
+                       totalPrice = productDetailsViewModel.countItem.intValue,
+                       onSearchClicked = onSearchClicked
+                   )
+               }
+           }
+           is ProductDetails.Loading -> {
+               LoadingScreen()
+           }
+           is ProductDetails.Error -> {
+               ErrorScreen(
+                   message = productDetails.message,
+                   onReloadClicked = {},
+                   navigateToHome = navigateToHome
+               )
+           }
+       }
     }
 }
 
 @Composable
-fun ProductDetails(
+private fun ProductDetailsItems(
     count: Int,
     decreaseItemCount: () -> Unit,
     increaseItemCount: () -> Unit,
@@ -158,9 +195,11 @@ fun ProductDetails(
     onAddToCartClicked: (Item) -> Unit,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
+    onSearchClicked: (StoreDestinations) -> Unit,
     onFavouriteClicked: () -> Unit,
     onFavourite: Boolean,
     totalPrice: Int,
+    savedItemsViewModel: SavedItemsViewModel = viewModel(factory = AppViewModelProvider.Factory),
     modifier: Modifier = Modifier
 ) {
 
@@ -168,7 +207,7 @@ fun ProductDetails(
         topBar = {
             ProductDetailsTopBar(
                 onBackClicked = onBackClicked,
-                onSearchClicked = {},
+                onSearchClicked = onSearchClicked,
                 onCartClicked = onCartClicked
             )
         },
@@ -191,6 +230,7 @@ fun ProductDetails(
                     .fillMaxWidth()
                     .padding(
                         start = dimensionResource(R.dimen.dp_10),
+                        end = dimensionResource(R.dimen.dp_10)
                     ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.dp_10))
@@ -207,11 +247,14 @@ fun ProductDetails(
                 item = item,
                 count = count,
                 onDecreaseClicked = decreaseItemCount,
-                onInCreaseClicked = increaseItemCount
+                onInCreaseClicked = increaseItemCount,
+                onFavouriteClicked = { save ->
+                    savedItemsViewModel.saveItems(save)
+                },
+                like = savedItemsViewModel.like.value
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             ProductDetailsNote()
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
             ProductDetailsDescription(item = item)
         }
     }
@@ -260,6 +303,8 @@ private fun ProductDetailsTextAndItem(
     count: Int,
     onDecreaseClicked: () -> Unit,
     onInCreaseClicked: () -> Unit,
+    onFavouriteClicked: (Item) -> Unit,
+    like: Boolean,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -357,13 +402,26 @@ private fun ProductDetailsTextAndItem(
                         .weight(1f)
                 )
                 Column {
-                    ProductDetailsLikeAndShareIcon(
-                        onClicked = { /*TODO*/ },
-                        imageVector = Icons.Outlined.Favorite,
-                        contentDescription = R.string.favourite,
+                    IconButton(
+                        onClick = { onFavouriteClicked(item) },
                         modifier = Modifier
-                        //    .align(Alignment.End)
-                    )
+
+                    ) {
+                        Card(
+                            shape = CircleShape,
+                            elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_2)),
+                            modifier = Modifier
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Favorite,
+                                contentDescription = stringResource(R.string.favourite),
+                                tint = if (like) Color.Red else Color.White,
+                                modifier = Modifier
+                                    .padding(dimensionResource(R.dimen.dp_3))
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                        }
+                    }
                     Text(
                         text = "2242"
                     )
@@ -376,6 +434,10 @@ private fun ProductDetailsTextAndItem(
 
 @Composable
 private fun ProductDetailsNote() {
+
+    var expand by rememberSaveable {
+        mutableStateOf(false)
+    }
     Card(
         elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_10)),
         shape = ShapeDefaults.Small,
@@ -383,14 +445,44 @@ private fun ProductDetailsNote() {
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
+            .padding(
+                start = dimensionResource(R.dimen.dp_5),
+                end = dimensionResource(R.dimen.dp_5),
+                bottom = dimensionResource(R.dimen.dp_5)
+            )
+            .animateContentSize()
     ) {
-        Text(
-            text = stringResource(R.string.note),
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Justify,
+        Row(
             modifier = Modifier
-                .padding(dimensionResource(R.dimen.dp_10))
-        )
+                .clickable { expand = !expand }
+                .fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.AddCircle,
+                contentDescription = stringResource(R.string.open),
+                modifier = Modifier
+                    .size(dimensionResource(R.dimen.dp_20))
+                    .padding(
+                        end = dimensionResource(R.dimen.dp_5),
+                        start = dimensionResource(R.dimen.dp_5)
+                    )
+            )
+            Text(
+                text = stringResource(R.string.deliveryRecommendation),
+                style = MaterialTheme.typography.displayLarge,
+                textAlign = TextAlign.Justify,
+                modifier = Modifier
+            )
+        }
+        if (expand) {
+            Text(
+                text = stringResource(R.string.note),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Justify,
+                modifier = Modifier
+                    .padding(dimensionResource(R.dimen.dp_10))
+            )
+        }
     }
 }
 
@@ -398,7 +490,7 @@ private fun ProductDetailsNote() {
 private fun ProductDetailsLikeAndShareIcon(
     onClicked: () -> Unit,
     imageVector: ImageVector,
-    contentDescription: Int,
+    @StringRes contentDescription: Int,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
@@ -431,13 +523,14 @@ private fun ProductQualityIncrease(
             contentDescription = R.string.decrease,
             isButtonEnable = count > 1,
             modifier = Modifier
-                .align(Alignment.CenterVertically)
+                .align(Alignment.CenterVertically),
+            iconSize = dimensionResource(R.dimen.dp_30),
         )
         Crossfade(
             targetState = count,
             animationSpec = TweenSpec(9, 5, LinearOutSlowInEasing),
             modifier = Modifier
-                .align(Alignment.CenterVertically)
+                .align(Alignment.CenterVertically), label = ""
         ) {
             Text(
                 text = "$it",
@@ -454,7 +547,8 @@ private fun ProductQualityIncrease(
             onClicked = onInCreaseClicked,
             imageVector = Icons.Default.Add,
             contentDescription = R.string.increase,
-            modifier = Modifier.align(Alignment.CenterVertically)
+            modifier = Modifier.align(Alignment.CenterVertically),
+            iconSize = dimensionResource(R.dimen.dp_30),
         )
     }
 }
@@ -521,7 +615,6 @@ private fun ProductDetailsTopBar(
     onBackClicked: () -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     TopAppBar(
         elevation = dimensionResource(R.dimen.dp_10),
@@ -549,10 +642,8 @@ private fun ProductDetailsTopBar(
                 imageVector = Icons.Default.Search,
                 contentDescription = R.string.search
             )
-            ProductDetailsTopAppBarIcons(
-                onClicked = { onCartClicked(MyCart) },
-                imageVector = Icons.Default.ShoppingCart,
-                contentDescription = R.string.cart
+            MyCartIcon(
+                onCartClicked = onCartClicked
             )
         }
     )
@@ -571,7 +662,7 @@ private fun ProductDetailsTopAppBarIcons(
         Icon(
             imageVector = imageVector,
             contentDescription = stringResource(contentDescription),
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = modifier,
         )
     }
@@ -666,6 +757,78 @@ private fun ProductDetailsBottomBar(
             Text(
                 text = stringResource(R.string.addToCart),
                 style = MaterialTheme.typography.displayMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(dimensionResource(R.dimen.dp_50)),
+            indicatorColor = Color.Blue
+        )
+    }
+}
+
+@Composable
+private fun ErrorScreen(
+    message: String?,
+    navigateToHome: (StoreDestinations) -> Unit,
+    onReloadClicked: () -> Unit
+) {
+
+    var showDialog by rememberSaveable {
+        mutableStateOf(true)
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        if (showDialog) {
+            AlertDialog(
+                title = {
+                    Text(
+                        text = "Error",
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                    )
+                },
+                text = {
+                    if (message != null) {
+                        Text(text = message)
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {
+                            navigateToHome(Home)
+                            showDialog = false
+                        },
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Text(text = stringResource(R.string.cancel))
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { onReloadClicked() }) {
+                        Text(text = stringResource(R.string.reload))
+                    }
+                },
+                onDismissRequest = { showDialog = false },
             )
         }
     }

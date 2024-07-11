@@ -4,11 +4,17 @@ import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -19,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,26 +39,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.jenstore.MyCart
 import com.example.jenstore.R
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
-import com.example.jenstore.data.model.Feeds
 import com.example.jenstore.data.model.Item
-import com.example.jenstore.ui.screens.home.HomeItemAndImage
-import com.example.jenstore.ui.screens.home.HomeViewModel
-import com.example.jenstore.ui.screens.home.UiState
-import kotlinx.coroutines.flow.Flow
-
-
+import com.example.jenstore.data.model.PaginationProducts
 @Composable
 fun ItemListScreen(
     items: LazyPagingItems<Item>,
@@ -119,7 +126,7 @@ private fun ItemList(
             ) {
                 itemsPaging(items = items, key = { item -> item.id }) { item ->
                     item?.let {
-                        HomeItemAndImage(
+                        ItemAndImage(
                             item = item,
                             onItemClicked = onItemClicked
                         )
@@ -132,15 +139,98 @@ private fun ItemList(
                     }
                 }
 
-                // items(items = items, key = { item -> item.id }) {
-                //            HomeItemAndImage(
-                //                item = it,
-                //                onItemClicked = onItemClicked,
-                //                modifier = Modifier
-                //            )
-                //        }
             }
         }
+    }
+}
+
+
+@Composable
+fun ItemAndImage(
+    item: Item,
+    onItemClicked: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clickable { onItemClicked(item.id) }
+            .width(dimensionResource(R.dimen.dp_200))
+    ) {
+        Column {
+            ItemImage(
+                image = item,
+                modifier = Modifier
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
+            Text(
+                text = item.name.uppercase(),
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Justify,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                modifier = Modifier
+                    .padding(
+                        bottom = dimensionResource(R.dimen.dp_2)
+                    )
+                    .align(alignment = Alignment.CenterHorizontally)
+            )
+            Text(
+                text = item.brand.uppercase(),
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.ExtraLight,
+                modifier = Modifier
+                    .padding(
+                        bottom = dimensionResource(R.dimen.dp_2)
+                    )
+                    .align(alignment = Alignment.CenterHorizontally)
+            )
+            Row(modifier = Modifier.align(alignment = Alignment.CenterHorizontally)) {
+                Icon(
+                    painter = painterResource(R.drawable.naira_sign),
+                    contentDescription = stringResource(R.string.naira),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .size(dimensionResource(R.dimen.dp_15))
+                )
+                Text(
+                    text = item.price.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(
+                            bottom = dimensionResource(R.dimen.dp_2)
+                        )
+
+                )
+            }
+        }
+    }
+}
+@Composable
+private fun ItemImage(
+    image: Item,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = MaterialTheme.shapes.small,
+        modifier = modifier
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(image.imageUri[0])
+                .crossfade(true)
+                .build(),
+            contentDescription = image.name,
+            contentScale = ContentScale.Crop,
+            error = painterResource(R.drawable.ic_broken_image),
+            placeholder = painterResource(R.drawable.loading_img),
+            modifier = Modifier
+                .width(162.dp)
+                .height(250.dp)
+        )
     }
 }
 
@@ -165,7 +255,7 @@ fun <T : Any> LazyGridScope.itemsPaging(
 }
 
 @SuppressLint("BanParcelableUsage")
-private data class PagingPlaceholderKey(private val index: Int) : Parcelable {
+data class PagingPlaceholderKey(private val index: Int) : Parcelable {
 
     override fun writeToParcel(parcel: Parcel, flags: Int) = parcel.writeInt(index)
 
@@ -198,7 +288,8 @@ fun ItemListTopAppBar(
                 Text(
                     text = stringResource(R.string.store_name),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold
                 )
         },
         navigationIcon = {
@@ -208,7 +299,7 @@ fun ItemListTopAppBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         },
@@ -222,15 +313,9 @@ fun ItemListTopAppBar(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            IconButton(
-                onClick = { navigateToCart(MyCart) }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = stringResource(R.string.cart),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            MyCartIcon(
+                onCartClicked = navigateToCart
+            )
 
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(MaterialTheme.colorScheme.background),

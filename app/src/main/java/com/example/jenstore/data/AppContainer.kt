@@ -3,28 +3,40 @@ package com.example.jenstore.data
 
 
 import android.content.Context
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.paging.PagingConfig
 import com.example.jenstore.data.local.StoreDatabase
+import com.example.jenstore.data.paging.FeedPaging
 import com.example.jenstore.data.paging.FeedPagingSource
 import com.example.jenstore.data.paging.ProductsPagingSource
+import com.example.jenstore.data.repository.FirebaseRepository
+import com.example.jenstore.data.repository.FirebaseRepositoryImpl
+import com.example.jenstore.data.repository.LocalRepository
+import com.example.jenstore.data.repository.LocalRepositoryImpl
+import com.example.jenstore.data.service.AccountService
+import com.example.jenstore.data.service.AccountServiceImpl
+import com.example.jenstore.data.service.StorageService
+import com.example.jenstore.data.service.StorageServiceImpl
 import com.google.firebase.Firebase
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import retrofit2.Retrofit
 
 interface AppContainer {
 
-    val repository: Repository
+    val firebaseRepository: FirebaseRepository
 
+    val localRepository: LocalRepository
 
     val storeDatabase: StoreDatabase
 
     val feedPagingSource: FeedPagingSource
 
     val productsPagingSource: ProductsPagingSource
+
+    val accountService: AccountService
+
+    val storageService: StorageService
+
+
 }
 
 
@@ -50,6 +62,14 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         FeedPagingSource(queryFeed = provideQueryFeed)
     }
 
+    private val feedPaging: FeedPaging by lazy {
+        FeedPaging(db)
+    }
+
+    private val feedConfig = PagingConfig(
+        pageSize = 1
+    )
+
     private val provideProductQuery = db
         .collection("products")
         .limit(4)
@@ -63,14 +83,32 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
 
-    override val repository: Repository by lazy {
-        RepositoryImpl(
-            ordersDao = storeDatabase.ordersDao(),
+    override val firebaseRepository: FirebaseRepository by lazy {
+        FirebaseRepositoryImpl(
             db = db,
             source = feedPagingSource,
             config = pagingConfig,
             productSource = productsPagingSource,
-            productConfig = productPagingConfig
+            productConfig = productPagingConfig,
+            searchSource = productsPagingSource,
+            feedPaging = feedPaging,
+            feedConfig = feedConfig
         )
     }
+
+    override val localRepository: LocalRepository by lazy {
+        LocalRepositoryImpl(ordersDao = storeDatabase.ordersDao())
+    }
+
+    override val accountService: AccountService by lazy {
+        AccountServiceImpl()
+    }
+
+    override val storageService: StorageService by lazy {
+        StorageServiceImpl(
+            accountService = accountService
+        )
+    }
+
+
 }

@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -26,6 +27,10 @@ object Home : StoreDestinations {
     override val route: String = "home"
 }
 
+object Splash : StoreDestinations {
+    override val icon: ImageVector = Icons.Default.Downloading
+    override val route: String = "splash"
+}
 object HomeList : StoreDestinations {
     override val icon: ImageVector = Icons.Default.Home
     override val route: String = "homeOne"

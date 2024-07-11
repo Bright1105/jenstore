@@ -9,10 +9,14 @@ import com.example.jenstore.ui.screens.cart.CartViewModel
 import com.example.jenstore.ui.screens.feed.FeedViewModel
 import com.example.jenstore.ui.screens.home.HomeViewModel
 import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
-import com.example.jenstore.ui.screens.profile.ProfileVIewModel
+import com.example.jenstore.ui.screens.profile.ProfileViewModel
+import com.example.jenstore.ui.screens.profile.account.AccountViewModel
+import com.example.jenstore.ui.screens.profile.account.address.AddressViewModel
+import com.example.jenstore.ui.screens.profile.account.saveitems.SavedItemsViewModel
 import com.example.jenstore.ui.screens.profile.createAccount.RegisterAccountViewModel
 import com.example.jenstore.ui.screens.profile.loginAccount.LoginViewModel
 import com.example.jenstore.ui.screens.search.SearchViewModel
+import com.example.jenstore.ui.screens.splash.SplashViewModel
 
 
 /**
@@ -26,40 +30,44 @@ object AppViewModelProvider {
         // Initializer for HomeViewModel
         initializer {
             HomeViewModel(
-                repository = storeApplication().container.repository,
+                firebaseRepository = storeApplication().container.firebaseRepository,
             )
         }
 
         // Initializer for SearchViewModel
         initializer {
             SearchViewModel(
-                repository = storeApplication().container.repository,
+                firebaseRepository = storeApplication().container.firebaseRepository,
             )
         }
 
         // Initializer for ProductDetailsViewModel
         initializer {
-            ProductDetailsViewModel(repository = storeApplication().container.repository)
+            ProductDetailsViewModel(
+                firebaseRepository = storeApplication().container.firebaseRepository,
+                localRepository = storeApplication().container.localRepository
+            )
         }
 
         // Initializer for ProfileViewModel
         initializer {
-            ProfileVIewModel(
-                repository = storeApplication().container.repository
+            ProfileViewModel(
+                accountService = storeApplication().container.accountService,
+                storageService = storeApplication().container.storageService
             )
         }
 
         // Initializer for CartViewModel
         initializer {
             CartViewModel(
-                repository = storeApplication().container.repository
+                localRepository = storeApplication().container.localRepository
             )
         }
 
         // Initializer for FeedViewModel
         initializer {
             FeedViewModel(
-                repository = storeApplication().container.repository,
+                firebaseRepository = storeApplication().container.firebaseRepository,
                // pager = Pager(
                 //                    config = PagingConfig(pageSize = 1),
                 //                    remoteMediator = FeedRemoteMediator(
@@ -74,11 +82,37 @@ object AppViewModelProvider {
         }
 
         initializer {
-            LoginViewModel(repository = storeApplication().container.repository)
+            LoginViewModel(accountService = storeApplication().container.accountService)
         }
 
         initializer {
-            RegisterAccountViewModel(repository = storeApplication().container.repository)
+            RegisterAccountViewModel(accountService = storeApplication().container.accountService)
+        }
+
+        initializer {
+            SplashViewModel(accountService = storeApplication().container.accountService)
+        }
+
+        initializer {
+            AccountViewModel(
+                accountService = storeApplication().container.accountService,
+                storageService = storeApplication().container.storageService
+            )
+        }
+
+        initializer {
+            AddressViewModel(
+                accountService = storeApplication().container.accountService,
+                storageService = storeApplication().container.storageService
+            )
+        }
+
+        initializer {
+            SavedItemsViewModel(
+                accountService = storeApplication().container.accountService,
+                storageService = storeApplication().container.storageService,
+                localRepository = storeApplication().container.localRepository
+            )
         }
     }
 }

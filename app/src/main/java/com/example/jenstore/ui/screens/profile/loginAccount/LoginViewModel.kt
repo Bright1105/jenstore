@@ -2,105 +2,68 @@ package com.example.jenstore.ui.screens.profile.loginAccount
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.example.jenstore.data.Repository
+import com.example.jenstore.Login
+import com.example.jenstore.Profile
+import com.example.jenstore.Register
+import com.example.jenstore.StoreDestinations
+import com.example.jenstore.data.repository.FirebaseRepository
 import com.example.jenstore.data.model.User
+import com.example.jenstore.data.service.AccountService
+import com.example.jenstore.ui.screens.StoreAppViewModel
+import com.example.jenstore.ui.screens.profile.createAccount.RegisterScreen
+import kotlinx.coroutines.Delay
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 
 
-/**
- * Types of UX events triggered by user actions.
- */
-
-//sealed class LoginEvent(val severity: EventSeverity, val message: String) {
-//
-//}
-//
-//
-///**
-// * Severity of the event
-// */
-//
-//enum class EventSeverity {
-//    INFO, ERROR
-//}
-//
-///**
-// * Users can either create accounts or log in with an existing one.
-// */
-//enum class LoginAction {
-//    LOGIN, CREATE_ACCOUNT
-//}
-//
-///**
-// * UI representation of the screen state
-// */
-//data class LoginState(
-//    val action: LoginAction,
-//    val username: String = "",
-//    val email: String = "",
-//    val password: String = "",
-//    val firstName: String = "",
-//    val lastName: String = "",
-//    val isActive: Boolean = true,
-//    val isStaff: Boolean = false,
-//    val enable: Boolean = true
-//) {
-//    companion object {
-//        /**
-//         * Initial Ui State of the login screen
-//         */
-//        val initialState = LoginState(action = LoginAction.LOGIN)
-//    }
-//}
+data class LoginAccountMessage(val message: String?)
 
 class LoginViewModel(
-    private val repository: Repository
-) : ViewModel() {
+    private val accountService: AccountService
+) : StoreAppViewModel() {
 
-    val email = mutableStateOf("")
-    val username = mutableStateOf("")
-    val password = mutableStateOf("")
-    val firstNames = mutableStateOf("")
-    val lastNames = mutableStateOf("")
-    val phoneNumber = mutableStateOf("")
+    val email = MutableStateFlow("")
+    val password = MutableStateFlow("")
+
+    private val _loginUiState = MutableStateFlow(LoginUiState())
+    val loginUiState: StateFlow<LoginUiState> = _loginUiState
 
 
-    fun setEmail(email: String) {
-        this.email.value = email
+    fun updateEmail(newEmail: String) {
+        this.email.value = newEmail
     }
 
-    fun setUsername(username: String) {
-        this.username.value = username
+
+    fun updatePassword(newPassword: String) {
+       this.password.value = newPassword
     }
 
-    fun setPassword(password: String) {
-       this.password.value = password
+
+    fun onSignInClick(openAndPopUp: (StoreDestinations, StoreDestinations) -> Unit) {
+        launchCatching {
+            runCatching {
+                accountService.signIn(email.value, password.value)
+                _loginUiState.update {
+                    it.copy(
+                        loading = true
+                    )
+                }
+                delay(3000)
+                openAndPopUp(Profile, Login)
+            }.onFailure {  fail ->
+                _loginUiState.update {
+                    it.copy(
+                        loading = false,
+                        message = fail.message
+                    )
+                }
+            }
+        }
     }
 
-    fun setFirstName(firstName: String) {
-        this.firstNames.value = firstName
-    }
-
-    fun setLastName(lastName: String) {
-       this.lastNames.value = lastName
-    }
-
-    fun setPhoneNumber(phoneNumber: String) {
-        this.phoneNumber.value = phoneNumber
-    }
-
-    //fun setIsActive(isActive: Boolean) {
-    //        _state.value = state.value
-    //    }
-
-
-
-    fun createAccount(user: User) {
-
-    }
-
-    fun login(user: User, fromCreation: Boolean = false) {
-
-    }
+   fun onSignUpClick(openAndPopUp: (StoreDestinations, StoreDestinations) -> Unit) {
+       openAndPopUp(Register, Login)
+   }
 }
-// initiaze the user through database to always the user
-// anytime create another account or login another account, the old user in the database will be cleared and new will be store in db

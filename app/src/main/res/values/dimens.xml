@@ -45,5 +45,9 @@
     <dimen name="dp_70">70.dp</dimen>
     <dimen name="dp_18">18.dp</dimen>
     <dimen name="dp_90">90.dp</dimen>
+    <dimen name="dp_22">22.dp</dimen>
+    <dimen name="dp_4">4.dp</dimen>
+    <dimen name="dp_28">28.dp</dimen>
+    <dimen name="dp_29">29dp</dimen>
 
 </resources>

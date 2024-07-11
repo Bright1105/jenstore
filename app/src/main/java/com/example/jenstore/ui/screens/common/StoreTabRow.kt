@@ -41,11 +41,15 @@ fun StoreTabRow(
     onTabSelected: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations
 ) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (currentScreen.route == currentScreen.route) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.background,
+        label = "background color"
+    )
     Surface(
         Modifier
             .height(TabHeight)
             .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background
+        color = backgroundColor
     ) {
         Divider()
         Row(
@@ -73,7 +77,7 @@ private fun StoreTab(
     selected: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val color = MaterialTheme.colorScheme.onBackground
+    val color = MaterialTheme.colorScheme.background
     val durationMillis = if (selected) TabFadeInAnimationDuration else TabFadeOutAnimationDuration
     val animSpec = remember {
         tween<Color>(
@@ -84,7 +88,7 @@ private fun StoreTab(
     }
     val tabTintColor by animateColorAsState(
         targetValue = if (selected) color else color.copy(alpha = InactiveTabOpacity),
-        animationSpec = animSpec
+        animationSpec = animSpec, label = ""
     )
     Row(
         modifier = modifier
