@@ -13,10 +13,12 @@ import androidx.paging.filter
 import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.data.repository.FirebaseRepository
 import com.example.jenstore.data.model.Item
+import com.example.jenstore.data.model.Promotions
 import com.google.firebase.FirebaseError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -42,12 +44,11 @@ class HomeViewModel(
     var homeUiState: HomeUiState by mutableStateOf(HomeUiState.Loading)
             private set
 
+    val promotions: Flow<List<Promotions>> = firebaseRepository.getPromotions()
 
     init {
         getProduct()
     }
-
- //   var type = mutableStateOf("")
 
 
     fun getProduct() {

@@ -20,7 +20,6 @@ import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.screens.profile.ProfileScreen
 import com.example.jenstore.ui.screens.profile.account.AccountScreen
 import com.example.jenstore.ui.screens.profile.account.address.AddressScreen
-import com.example.jenstore.ui.screens.profile.account.inbox.InboxScreen
 import com.example.jenstore.ui.screens.profile.account.notification.NotificationsScreen
 import com.example.jenstore.ui.screens.profile.account.orders.OrdersScreen
 import com.example.jenstore.ui.screens.profile.account.promotion.PromotionScreen
@@ -116,6 +115,9 @@ fun StoreGraph(
                 navigateBack = {
                     appState.popUp()
                 },
+                navigateToOrders = {
+                    appState.navigate(it.route)
+                },
                 cartViewModel = cartViewModel
             )
         }
@@ -148,9 +150,6 @@ fun StoreGraph(
                     appState.navigate(it.route)
                 },
                 onOrderClicked = {
-                    appState.navigate(it.route)
-                },
-                onInboxClicked = {
                     appState.navigate(it.route)
                 },
                 onNotifyClicked = {
@@ -200,7 +199,6 @@ fun StoreGraph(
         ) {
             ProductDetailsScreen(
                 productDetails = productDetailsViewModel.productDetails,
-                route = route,
                 onBackClicked = {
                     appState.popUp()
                 },
@@ -217,13 +215,24 @@ fun StoreGraph(
             )
         }
         composable(route = Orders.route) {
-            OrdersScreen()
-        }
-        composable(route = Inbox.route) {
-            InboxScreen()
+            OrdersScreen(
+                onBackClicked = {
+                    appState.popUp()
+                },
+                onSearchClicked = {
+                    appState.navigate(it.route)
+                },
+                onCartClicked = {
+                    appState.navigate(it.route)
+                }
+            )
         }
         composable(route = Notifications.route) {
-            NotificationsScreen()
+            NotificationsScreen(
+                onBackClicked = {
+                    appState.popUp()
+                }
+            )
         }
         composable(route = SaveItems.route) {
             SaveItemsScreen(
@@ -246,7 +255,11 @@ fun StoreGraph(
             )
         }
         composable(route = Promotions.route) {
-            PromotionScreen()
+            PromotionScreen(
+                onBackClicked = {
+                    appState.popUp()
+                }
+            )
         }
         composable(
             route = "${Account.route}$STORE_ID_ARG",

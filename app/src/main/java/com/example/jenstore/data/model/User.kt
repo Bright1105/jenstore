@@ -15,22 +15,32 @@ data class User(
 
 data class UserInformation(
     @DocumentId
-    val id: String = "",
-    val userId: String = "",
-    val image: String = "",
-    val firstName: String = "",
+    val id: String? = "",
+    val userId: String? = "",
+    val image: String? = null,
+    val firstName: String? = "",
     val middleName: String? = "",
-    val lastName: String = "",
-    val gender: String = "",
-    val phoneNumber: String = "",
+    val lastName: String? = "",
+    val gender: String? = "",
+    val phoneNumber: String? = "",
 )
 
 data class UserAddress(
     @DocumentId
-    val id: String = "",
-    val userId: String = "",
-    val address: String = "",
-    val additionalInformation: String = "",
-    val region: String = "",
-    val city: String = ""
+    val id: String? = "",
+    val userId: String? = "",
+    val address: String? = "",
+    val additionalInformation: String? = "",
+    val region: String? = "",
+    val city: String? = ""
+)
+
+data class JennyInfo(
+    val firstName: String = "",
+    val middleName: String? = "",
+    val lastName: String = "",
+    val bankName: String = "",
+    val bankImage: String? = null,
+    val bankAccount: String = "",
+    val phoneNumber: String = ""
 )

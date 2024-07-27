@@ -12,6 +12,9 @@ import com.example.jenstore.ui.screens.productDetails.ProductDetailsViewModel
 import com.example.jenstore.ui.screens.profile.ProfileViewModel
 import com.example.jenstore.ui.screens.profile.account.AccountViewModel
 import com.example.jenstore.ui.screens.profile.account.address.AddressViewModel
+import com.example.jenstore.ui.screens.profile.account.notification.NotificationViewModel
+import com.example.jenstore.ui.screens.profile.account.orders.OrdersViewModel
+import com.example.jenstore.ui.screens.profile.account.promotion.PromotionsViewModels
 import com.example.jenstore.ui.screens.profile.account.saveitems.SavedItemsViewModel
 import com.example.jenstore.ui.screens.profile.createAccount.RegisterAccountViewModel
 import com.example.jenstore.ui.screens.profile.loginAccount.LoginViewModel
@@ -60,7 +63,9 @@ object AppViewModelProvider {
         // Initializer for CartViewModel
         initializer {
             CartViewModel(
-                localRepository = storeApplication().container.localRepository
+                localRepository = storeApplication().container.localRepository,
+                storageService = storeApplication().container.storageService,
+                accountService = storeApplication().container.accountService
             )
         }
 
@@ -111,6 +116,26 @@ object AppViewModelProvider {
             SavedItemsViewModel(
                 accountService = storeApplication().container.accountService,
                 storageService = storeApplication().container.storageService,
+                localRepository = storeApplication().container.localRepository
+            )
+        }
+
+        initializer {
+            PromotionsViewModels(
+                firebaseRepository = storeApplication().container.firebaseRepository
+            )
+        }
+
+        initializer {
+            NotificationViewModel(
+                firebaseRepository = storeApplication().container.firebaseRepository
+            )
+        }
+
+        initializer {
+            OrdersViewModel(
+                storageService = storeApplication().container.storageService,
+                firebaseRepository = storeApplication().container.firebaseRepository,
                 localRepository = storeApplication().container.localRepository
             )
         }

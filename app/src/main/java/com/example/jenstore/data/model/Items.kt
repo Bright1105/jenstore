@@ -2,6 +2,7 @@ package com.example.jenstore.data.model
 
 import android.net.Uri
 import com.example.jenstore.R
+import com.example.jenstore.data.local.cart.OrdersEntity
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import kotlinx.serialization.Serializable
@@ -22,6 +23,15 @@ data class SavedItems(
     val like: Boolean = false
 )
 
+data class Checkout(
+    @DocumentId
+    val id: String = "",
+    val userId: String = "",
+    val ordersEntity: OrdersEntity = OrdersEntity(),
+    val orderPending: Boolean = true,
+    val orderReceived: Boolean = false,
+    val dateCreated: Timestamp? = null
+)
 
 
 
@@ -64,28 +74,24 @@ val genderItem = listOf(
 )
 
 data class Region(
-    val region: String
+    val region: List<String>
 )
 
-val regions = listOf(
-    Region("Abia"),
-    Region("Akwa Ibom"),
-    Region("Anambra"),
-    Region("Bauchi"),
-    Region("Bayelsa"),
-    Region("Benue"),
-    Region("Borno"),
-    Region("Cross River"),
-    Region("Delta"),
-    Region("Ebonyi"),
-    Region("Edo"),
-    Region("Ekiti"),
-    Region("Enugu"),
-    Region("Lagos"),
-    Region("Kano"),
-    Region("Niger"),
-    Region("Ondo"),
-    Region("Kaduna"),
+val regions = Region(
+    listOf(
+        "Abia State",
+        "Adamawa State",
+        "Akwa Ibom State",
+        "Anambra State",
+        "Bauchi State",
+        "Bayelsa State",
+        "Benue State" ,
+        "Borno State",
+        "Cross River State" ,
+        "Delta State",
+        "Ebonyi State",
+        "Edo State"
+    )
 )
 
 data class City(

@@ -1,5 +1,6 @@
 package com.example.jenstore.ui.screens.productDetails
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
@@ -24,9 +25,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -40,6 +42,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
@@ -72,7 +76,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.material.CircularProgressIndicator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.jenstore.AppViewModelProvider
@@ -94,9 +97,7 @@ import java.util.Locale
 
 @Composable
 fun ProductDetailsScreen(
- //   item: Item?,
     productDetails: ProductDetails,
-    route: StoreDestinations,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
@@ -104,43 +105,9 @@ fun ProductDetailsScreen(
     productDetailsViewModel: ProductDetailsViewModel
 ) {
     val scope: CoroutineScope = rememberCoroutineScope()
-    val productUiState: ProductDetailsUiState by productDetailsViewModel.uiState.collectAsState()
-
-   val context = LocalContext.current
-
-    val error = Errors()
-
-//    LaunchedEffect(productDetailsViewModel.addEvent) {
-//        productDetailsViewModel.addEvent
-//            .collect { addEvent ->
-//                when (addEvent) {
-//                    is AddEvent.Info -> {
-//                        Toast.makeText(context, addEvent.message, Toast.LENGTH_SHORT).show()
-//                    }
-//                    is AddEvent.Error -> {
-//                        Toast.makeText(context, addEvent.throwable.message, Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//            }
-//    }
-
 
     Column {
-
-//        error.message.let {  message ->
-//            if (message != null) {
-//                Text(
-//                    text = message,
-//                    style = MaterialTheme.typography.titleSmall,
-//                    textAlign = TextAlign.Center,
-//                    modifier = Modifier
-//                        .align(Alignment.CenterHorizontally)
-//                )
-//            }
-//        }
-
        when (productDetails) {
-
            is ProductDetails.Success -> {
                productDetails.currentProduct?.let {
                    ProductDetailsItems(
@@ -160,12 +127,6 @@ fun ProductDetailsScreen(
                        },
                        onBackClicked = onBackClicked,
                        onCartClicked = onCartClicked,
-                       onFavouriteClicked = {
-                           productDetailsViewModel.onFavouriteClicked()
-                           // check when finish setting users
-                       },
-                       onFavourite = productDetailsViewModel.onFavourite.value,
-                       route = route,
                        totalPrice = productDetailsViewModel.countItem.intValue,
                        onSearchClicked = onSearchClicked
                    )
@@ -187,20 +148,17 @@ fun ProductDetailsScreen(
 
 @Composable
 private fun ProductDetailsItems(
+    modifier: Modifier = Modifier,
     count: Int,
     decreaseItemCount: () -> Unit,
     increaseItemCount: () -> Unit,
     item: Item,
-    route: StoreDestinations,
     onAddToCartClicked: (Item) -> Unit,
     onBackClicked: () -> Unit,
     onCartClicked: (StoreDestinations) -> Unit,
     onSearchClicked: (StoreDestinations) -> Unit,
-    onFavouriteClicked: () -> Unit,
-    onFavourite: Boolean,
     totalPrice: Int,
     savedItemsViewModel: SavedItemsViewModel = viewModel(factory = AppViewModelProvider.Factory),
-    modifier: Modifier = Modifier
 ) {
 
     Scaffold(
@@ -254,7 +212,6 @@ private fun ProductDetailsItems(
                 like = savedItemsViewModel.like.value
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
-            ProductDetailsNote()
             ProductDetailsDescription(item = item)
         }
     }
@@ -271,7 +228,7 @@ private fun ProductDetailsDescription(
         shape = ShapeDefaults.Small,
         modifier = modifier
             .fillMaxWidth()
-            .fillMaxHeight()
+            .padding(bottom = dimensionResource(R.dimen.dp_20))
     ) {
         Column(
             modifier = modifier
@@ -313,12 +270,11 @@ private fun ProductDetailsTextAndItem(
         shape = ShapeDefaults.Small,
         modifier = modifier
             .fillMaxWidth()
-            .fillMaxHeight()
     ) {
         Column(modifier = modifier) {
             Text(
                 text = item.name.uppercase(),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier
                     .padding(
@@ -377,55 +333,27 @@ private fun ProductDetailsTextAndItem(
                     modifier = Modifier
                         .padding(
                             bottom = dimensionResource(R.dimen.dp_5),
-                          //  start = dimensionResource(R.dimen.dp_20)
                         )
                 )
-                // set the search screen
             }
-            Text(
-                text = "${item.itemAvailable} items left",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+            IconButton(
+                onClick = { onFavouriteClicked(item) },
                 modifier = Modifier
-                    .padding(
-                        top = dimensionResource(R.dimen.dp_5),
-                        end = dimensionResource(R.dimen.dp_20),
-                        start = dimensionResource(R.dimen.dp_20)
-                    )
-            )
-            Row {
-                ProductDetailsLikeAndShareIcon(
-                    onClicked = {  },
-                    imageVector = Icons.Default.Share,
-                    contentDescription = R.string.share,
+                    .padding(bottom = dimensionResource(R.dimen.dp_20))
+            ) {
+                Card(
+                    shape = CircleShape,
+                    elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_2)),
                     modifier = Modifier
-                        .weight(1f)
-                )
-                Column {
-                    IconButton(
-                        onClick = { onFavouriteClicked(item) },
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Favorite,
+                        contentDescription = stringResource(R.string.favourite),
+                        tint = if (like) Color.Red else Color.White,
                         modifier = Modifier
-
-                    ) {
-                        Card(
-                            shape = CircleShape,
-                            elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_2)),
-                            modifier = Modifier
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Favorite,
-                                contentDescription = stringResource(R.string.favourite),
-                                tint = if (like) Color.Red else Color.White,
-                                modifier = Modifier
-                                    .padding(dimensionResource(R.dimen.dp_3))
-                                    .align(Alignment.CenterHorizontally)
-                            )
-                        }
-                    }
-                    Text(
-                        text = "2242"
+                            .padding(dimensionResource(R.dimen.dp_3))
+                            .align(Alignment.CenterHorizontally)
                     )
-
                 }
             }
         }
@@ -490,7 +418,6 @@ private fun ProductDetailsNote() {
 private fun ProductDetailsLikeAndShareIcon(
     onClicked: () -> Unit,
     imageVector: ImageVector,
-    @StringRes contentDescription: Int,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
@@ -500,7 +427,7 @@ private fun ProductDetailsLikeAndShareIcon(
         ) {
             Icon(
                 imageVector = imageVector,
-                contentDescription = stringResource(contentDescription),
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
         }
@@ -610,6 +537,7 @@ private fun ProductDetailsImage(
         )
     }
 }
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProductDetailsTopBar(
     onBackClicked: () -> Unit,
@@ -617,12 +545,7 @@ private fun ProductDetailsTopBar(
     onCartClicked: (StoreDestinations) -> Unit,
 ) {
     TopAppBar(
-        elevation = dimensionResource(R.dimen.dp_10),
-        backgroundColor = MaterialTheme.colorScheme.background,
-        modifier = Modifier
-            .padding(
-                top = dimensionResource(R.dimen.dp_30)
-            ),
+        modifier = Modifier,
         navigationIcon = {
             ProductDetailsTopAppBarIcons(
                 onClicked = onBackClicked,
@@ -706,46 +629,51 @@ private fun ProductDetailsBottomBar(
     onAddToCartClicked: (Item) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row {
-        Button(
-            onClick = { /*TODO*/ },
-            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
+    Column {
+        Card(
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(dimensionResource(R.dimen.dp_50)),
             modifier = modifier
-                .width(dimensionResource(R.dimen.dp_180))
-                .padding(
-                    end = dimensionResource(R.dimen.dp_35),
-                    start = dimensionResource(R.dimen.dp_10),
-                    bottom = dimensionResource(R.dimen.dp_10)
-                )
+                .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.dp_10))
+                .height(dimensionResource(R.dimen.dp_35))
+
         ) {
-            Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = stringResource(R.string.totalPrice),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(end = dimensionResource(R.dimen.dp_5))
                 )
-                Row {
-                    Icon(
-                        painter = painterResource(R.drawable.naira_sign),
-                        contentDescription = stringResource(R.string.naira),
-                        tint = MaterialTheme.colorScheme.background,
-                        modifier = modifier
-                            .size(dimensionResource(R.dimen.dp_15))
-                    )
-                    Text(
-                        text = item.price.times(totalPrice).toString(),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-
+                Icon(
+                    painter = painterResource(R.drawable.naira_sign),
+                    contentDescription = stringResource(R.string.naira),
+                    tint = MaterialTheme.colorScheme.background,
+                    modifier = modifier
+                        .size(dimensionResource(R.dimen.dp_15))
+                )
+                Text(
+                    text = item.price.times(totalPrice).toString(),
+                    style = MaterialTheme.typography.labelMedium
+                )
             }
         }
         Button(
             onClick = { onAddToCartClicked(item) },
             colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
             modifier = modifier
-                .width(dimensionResource(R.dimen.dp_200))
+                .fillMaxWidth()
+                .height(dimensionResource(R.dimen.dp_50))
                 .padding(
+                    start = dimensionResource(R.dimen.dp_10),
                     end = dimensionResource(R.dimen.dp_10),
                     bottom = dimensionResource(R.dimen.dp_10)
                 )
@@ -775,7 +703,6 @@ private fun LoadingScreen() {
         CircularProgressIndicator(
             modifier = Modifier
                 .size(dimensionResource(R.dimen.dp_50)),
-            indicatorColor = Color.Blue
         )
     }
 }

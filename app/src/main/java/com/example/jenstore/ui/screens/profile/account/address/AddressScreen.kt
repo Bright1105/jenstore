@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -22,6 +20,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -46,11 +44,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.material.Icon
 import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.Search
@@ -58,7 +53,7 @@ import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.UserAddress
 import com.example.jenstore.ui.screens.common.MyCartIcon
 
-@OptIn(ExperimentalMaterialApi::class)
+
 @Composable
 fun AddressScreen(
     addressViewModel: AddressViewModel = viewModel(factory = AppViewModelProvider.Factory),
@@ -84,9 +79,7 @@ fun AddressScreen(
         mutableStateOf(false)
     }
     val regionList = addressViewModel.regionList
-    var textFieldSize by remember {
-        mutableStateOf(Size.Zero)
-    }
+
 
     var isCityItemsVisible by rememberSaveable {
         mutableStateOf(false)
@@ -143,6 +136,32 @@ fun AddressScreen(
                     }
                 )
 
+                DropdownMenu(
+                    expanded = isRegionItemsVisible,
+                    onDismissRequest = {
+                        isRegionItemsVisible = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+
+                ) {
+                    regionList.region.forEach {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            },
+                            onClick = {
+                                addressViewModel.updateRegion(it)
+                                isRegionItemsVisible = false
+                            },
+                            modifier = Modifier
+                        )
+                    }
+                }
                 AddressTextField(
                     value = addressRegion.value,
                     onValueChanged = { region ->
@@ -168,31 +187,9 @@ fun AddressScreen(
                     },
                     readOnly = true,
                     modifier = Modifier
-                        .onGloballyPositioned { coordinates ->
-                            // this value is used to assign to the dropDown the same width
-                            textFieldSize = coordinates.size.toSize()
-                        }
+
                 )
-                DropdownMenu(
-                    expanded = isRegionItemsVisible,
-                    onDismissRequest = {
-                        isRegionItemsVisible = false
-                    },
-                    modifier = Modifier
-                        .width(with(LocalDensity.current){textFieldSize.width.toDp()})
-                ) {
-                    regionList.forEach {
-                        DropdownMenuItem(
-                            text = {
-                                Text(text = it.region)
-                            },
-                            onClick = {
-                                addressViewModel.updateRegion(it.region)
-                                isRegionItemsVisible = false
-                            }
-                        )
-                    }
-                }
+
                 AddressTextField(
                     value = addressCity.value,
                     onValueChanged = { city ->
@@ -209,9 +206,7 @@ fun AddressScreen(
                                 isCityItemsVisible = true
                             },
                             modifier = Modifier
-                                .onGloballyPositioned { coordinates ->
-                                    textFieldSize = coordinates.size.toSize()
-                                }
+
                         ) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
@@ -228,13 +223,15 @@ fun AddressScreen(
                         isCityItemsVisible = false
                     },
                     modifier = Modifier
-                        .width(with(LocalDensity.current){textFieldSize.width.toDp()})
+                        .fillMaxWidth()
+                        .fillMaxHeight()
                 ) {
                     cityList.forEach {
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = it.city
+                                    text = it.city,
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                             },
                             onClick = {
@@ -301,13 +298,15 @@ private fun AddressBook(
                 .fillMaxWidth()
                 .padding(dimensionResource(R.dimen.dp_10))
         ) {
-            AddressBookInfo(
-                address = address.address,
-                modifier = Modifier
-                    .padding(top = dimensionResource(R.dimen.dp_10))
-            )
-            AddressBookInfo(address = address.city)
-            AddressBookInfo(address = address.region)
+            address.address?.let {
+                AddressBookInfo(
+                    address = it,
+                    modifier = Modifier
+                        .padding(top = dimensionResource(R.dimen.dp_10))
+                )
+            }
+            address.city?.let { AddressBookInfo(address = it) }
+            address.region?.let { AddressBookInfo(address = it) }
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()

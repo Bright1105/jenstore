@@ -74,8 +74,10 @@ import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.Item
 import com.example.jenstore.ui.StoreTopAppBar
 import com.example.jenstore.data.model.ItemType
+import com.example.jenstore.data.model.Promotions
 import com.example.jenstore.ui.screens.common.ItemListScreen
 import com.example.jenstore.ui.screens.common.StoreTabRow
+import com.example.jenstore.ui.screens.profile.account.promotion.PromotionCard
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
@@ -194,26 +196,18 @@ private fun HomeItem(
 
     val pullToRefreshState = rememberPullToRefreshState()
     val scope: CoroutineScope = rememberCoroutineScope()
-
-//    val infiniteTransition = rememberInfiniteTransition(label = "infinite loading")
-//    val alpha by infiniteTransition.animateFloat(
-//        initialValue = 0f,
-//        targetValue = 1f,
-//        animationSpec = infiniteRepeatable(
-//            animation = keyframes {
-//                durationMillis = 1000
-//                0.7f at 500
-//            },
-//            repeatMode = RepeatMode.Reverse
-//        ), label = "alpha"
-//    )
+    val promotions = homeViewModel.promotions.collectAsState(initial = emptyList())
 
     when (homeUiState) {
         is HomeUiState.Success -> {
-            Box(
+            Column(
                 modifier = modifier
-                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                HomePromotionList(
+                    promotions = promotions.value,
+                )
                 LazyColumn(
                     state = lazyListState,
                     modifier = modifier
@@ -314,7 +308,7 @@ private fun HomeItem(
                 PullToRefreshContainer(
                     state = pullToRefreshState,
                     modifier = modifier
-                        .align(Alignment.TopCenter)
+                      //  .align(Alignment.TopCenter)
                 )
             }
         }
@@ -329,6 +323,22 @@ private fun HomeItem(
                 message = homeUiState.message,
                 retryAction = homeViewModel::getProduct,
                 navigateToCart = {}
+            )
+        }
+
+    }
+}
+
+@Composable
+private fun HomePromotionList(
+    promotions: List<Promotions>
+) {
+    LazyRow {
+        items(promotions, key = {promotion -> promotion.id }) { promotion ->
+            PromotionCard(
+                promotion = promotion,
+                modifier = Modifier
+                    .height(dimensionResource(R.dimen.dp_150))
             )
         }
     }

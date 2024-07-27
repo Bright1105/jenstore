@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,32 +18,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.ShoppingBasket
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
@@ -80,12 +76,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.jenstore.AppViewModelProvider
+import com.example.jenstore.Orders
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.ui.screens.common.StoreTabRow
 import com.example.jenstore.ui.theme.JenstoreTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -95,6 +93,7 @@ fun CartScreen(
     currentScreen: StoreDestinations,
     onItemClicked: (String) -> Unit,
     navigateBack: () -> Unit,
+    navigateToOrders: (StoreDestinations) -> Unit,
     cartViewModel: CartViewModel
 ) {
 
@@ -112,7 +111,14 @@ fun CartScreen(
         bottomBar = {
             Column {
                 CartBottomBarCheckout(
-                    onCheckoutClicked = { /*TODO*/ },
+                    ordersEntity = cartUiState.items,
+                    onCheckoutClicked = {
+                        scope.launch {
+                            cartViewModel.onCheckout(it)
+                            cartViewModel.clearCart(it)
+                            navigateToOrders(Orders)
+                        }
+                    },
                 )
                 StoreTabRow(
                     allScreensBar = allScreen,
@@ -123,13 +129,36 @@ fun CartScreen(
         }
     ) {
         Box(modifier = Modifier.padding(it)) {
-            CartContent(
-                items = cartUiState.items,
-                removeItem = cartViewModel::deleteItem,
-                increaseItemCount = cartViewModel::increaseCount,
-                decreaseItemCount = cartViewModel::decreaseCount,
-                onItemClicked = onItemClicked
-            )
+            if (cartUiState.items.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingBasket,
+                        contentDescription = stringResource(R.string.empty),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(dimensionResource(R.dimen.dp_180))
+                    )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.dp_10)))
+                    Text(
+                        text = stringResource(R.string.noItem),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                CartContent(
+                    items = cartUiState.items,
+                    removeItem = cartViewModel::deleteItem,
+                    increaseItemCount = cartViewModel::increaseCount,
+                    decreaseItemCount = cartViewModel::decreaseCount,
+                    onItemClicked = onItemClicked
+                )
+            }
         }
     }
 }
@@ -185,101 +214,20 @@ private fun CartContent(
     modifier: Modifier = Modifier
 ) {
 
-
-    LazyColumn(modifier) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+    ) {
         items(items, key = { item -> item.id } ) { order ->
-            SwipeDisMissItem(
-                background = { offsetX ->
-                    /*
-                    Background color changes from light gray to red when the
-                    swipe to delete with exceeds 160.dp
-                     */
-                    val backgroundColor = if (offsetX < (-160).dp) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onTertiary
-                    }
-                    Column(
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .background(backgroundColor),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        // Set 4.dp padding only if offset is bigger than 160.dp
-                        val padding: Dp by animateDpAsState(
-                            if (offsetX > (-160).dp) 4.dp else 0.dp, label = "padding"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .width(offsetX * -1)
-                                .padding(padding)
-                        ) {
-                            // Height equals to width removing padding
-                            val height = (offsetX + 8.dp) * -1
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(height)
-                                    .align(Alignment.Center),
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.error
-                            ) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    // Icon must be visible while in this width range
-                                    if (offsetX < (-40).dp && offsetX > (-152).dp) {
-                                        // Icon alpha decreases as it is about to disappear
-                                        val iconAlpha: Float by animateFloatAsState(
-                                            if (offsetX < (-120).dp) 0.5f else 1f, label = "iconAlpha"
-                                        )
-
-                                        Icon(
-                                            imageVector = Icons.Filled.DeleteForever,
-                                            contentDescription = stringResource(R.string.delete),
-                                            modifier = Modifier
-                                                .size(dimensionResource(R.dimen.dp_16))
-                                                .graphicsLayer(alpha = iconAlpha),
-                                            tint = MaterialTheme.colorScheme.background,
-                                        )
-                                    }
-                                    /*Text opacity increases as the text is supposed to appear in
-                                     the screen*/
-                                    val textAlpha by animateFloatAsState(
-                                        if (offsetX > (-144).dp) 0.5f else 1f, label = "textAlpha"
-                                    )
-                                    if (offsetX < (-120).dp) {
-                                        Text(
-                                            text = stringResource(R.string.remove),
-                                            style = MaterialTheme.typography.displayLarge,
-                                            color = MaterialTheme.colorScheme.background,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier
-                                                .graphicsLayer(
-                                                    alpha = textAlpha
-                                                )
-                                        )
-
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-            ) {
-                CartItem(
-                    count = order.countItem,
-                    item = order,
-                    removeItem = { removeItem(it) },
-                    increaseItemCount = { increaseItemCount(order) },
-                    decreaseItemCount = { decreaseItemCount(order) },
-                    onItemClicked = onItemClicked
-                )
-            }
+            CartItem(
+                count = order.countItem,
+                item = order,
+                removeItem = { removeItem(it) },
+                increaseItemCount = { increaseItemCount(order) },
+                decreaseItemCount = { decreaseItemCount(order) },
+                onItemClicked = onItemClicked
+            )
         }
         item {
             SummaryItem(
@@ -436,46 +384,44 @@ fun CartQuantitySelector(
     iconSize: Dp = dimensionResource(R.dimen.dp_30),
 ) {
     Row(modifier = modifier) {
-        CompositionLocalProvider(value = LocalContentAlpha provides ContentAlpha.medium) {
+        Text(
+            text = stringResource(R.string.qty),
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .padding(dimensionResource(R.dimen.dp_18))
+                .align(Alignment.CenterVertically)
+        )
+        CartProductQ(
+            onClicked =  decreaseItemCount,
+            imageVector = Icons.Default.Remove,
+            contentDescription = R.string.decrease,
+            modifier = Modifier.align(Alignment.CenterVertically),
+            iconSize = iconSize,
+            isButtonEnable = count > 1
+        )
+        Crossfade(
+            targetState = count,
+            modifier = Modifier
+                .align(Alignment.CenterVertically), label = ""
+        ) {
             Text(
-                text = stringResource(R.string.qty),
-                style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier
-                    .padding(dimensionResource(R.dimen.dp_18))
-                    .align(Alignment.CenterVertically)
-            )
-            CartProductQ(
-                onClicked =  decreaseItemCount,
-                imageVector = Icons.Default.Remove,
-                contentDescription = R.string.decrease,
-                modifier = Modifier.align(Alignment.CenterVertically),
-                iconSize = iconSize,
-                isButtonEnable = count > 1
-            )
-            Crossfade(
-                targetState = count,
-                modifier = Modifier
-                    .align(Alignment.CenterVertically), label = ""
-            ) {
-                Text(
-                    text = "$it",
-                    style = MaterialTheme.typography.displayMedium,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.widthIn(min = 24.dp)
-                )
-            }
-            CartProductQ(
-                onClicked = increaseItemCount,
-                imageVector = Icons.Default.Add,
-                contentDescription = R.string.increase,
-                modifier = Modifier.align(Alignment.CenterVertically),
-                iconSize = iconSize,
-                isButtonEnable = count > 0
+                text = "$it",
+                style = MaterialTheme.typography.displayMedium,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(min = 24.dp)
             )
         }
+        CartProductQ(
+            onClicked = increaseItemCount,
+            imageVector = Icons.Default.Add,
+            contentDescription = R.string.increase,
+            modifier = Modifier.align(Alignment.CenterVertically),
+            iconSize = iconSize,
+            isButtonEnable = count > 0
+        )
     }
 }
 
@@ -578,13 +524,11 @@ fun JenStoreDivider(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
     thickness: Dp = 1.dp,
-    startIndent: Dp = 0.dp
 ) {
-    Divider(
+    HorizontalDivider(
         modifier = modifier,
         color = color,
         thickness = thickness,
-        startIndent = startIndent
     )
 }
 
@@ -644,7 +588,8 @@ private fun CartProductImage(
 
 @Composable
 private fun CartBottomBarCheckout(
-    onCheckoutClicked: () -> Unit,
+    onCheckoutClicked: (List<OrdersEntity>) -> Unit,
+    ordersEntity: List<OrdersEntity>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -655,10 +600,10 @@ private fun CartBottomBarCheckout(
         Row {
             Spacer(Modifier.weight(1f))
             Button(
-                onClick = onCheckoutClicked,
+                onClick = { onCheckoutClicked(ordersEntity) },
                 shape = RectangleShape,
+                enabled = ordersEntity.isNotEmpty(),
                 modifier = Modifier
-                  //  .padding(horizontal = dimensionResource(R.dimen.dp_12), vertical = dimensionResource(R.dimen.dp_8))
                     .weight(1f)
             ) {
                 Text(

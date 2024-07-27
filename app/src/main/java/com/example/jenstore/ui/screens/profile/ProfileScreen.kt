@@ -47,7 +47,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jenstore.Account
 import com.example.jenstore.Address
 import com.example.jenstore.AppViewModelProvider
-import com.example.jenstore.Inbox
 import com.example.jenstore.MyCart
 import com.example.jenstore.Notifications
 import com.example.jenstore.Orders
@@ -57,6 +56,7 @@ import com.example.jenstore.SaveItems
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.ui.screens.cart.JenStoreDivider
+import com.example.jenstore.ui.screens.common.MyCartIcon
 import com.example.jenstore.ui.screens.common.StoreTabRow
 
 @Composable
@@ -65,7 +65,6 @@ fun ProfileScreen(
     onTabClicked: (StoreDestinations) -> Unit,
     currentScreen: StoreDestinations,
     onOrderClicked: (StoreDestinations) -> Unit,
-    onInboxClicked: (StoreDestinations) -> Unit,
     onNotifyClicked: (StoreDestinations) -> Unit,
     onSavedItemsClicked: (StoreDestinations) -> Unit,
     onPromotionClicked: (StoreDestinations) -> Unit,
@@ -109,7 +108,6 @@ fun ProfileScreen(
         ) {
             ProfileOrdersInfo(
                 onOrderClicked = onOrderClicked,
-                onInboxClicked = onInboxClicked,
                 onNotifyClicked = onNotifyClicked,
                 onSavedItemsClicked = onSavedItemsClicked,
                 onPromotionClicked = onPromotionClicked
@@ -185,7 +183,6 @@ private fun ProfileAccountSetting(
 @Composable
 private fun ProfileOrdersInfo(
     onOrderClicked: (StoreDestinations) -> Unit,
-    onInboxClicked: (StoreDestinations) -> Unit,
     onNotifyClicked: (StoreDestinations) -> Unit,
     onSavedItemsClicked: (StoreDestinations) -> Unit,
     onPromotionClicked: (StoreDestinations) -> Unit,
@@ -214,12 +211,6 @@ private fun ProfileOrdersInfo(
                 imageVector = Icons.AutoMirrored.Outlined.List,
                 description = R.string.orders,
                 onValueClicked = { onOrderClicked(Orders) },
-            )
-            ProfileAccountIconAndInfo(
-                text = R.string.inbox,
-                imageVector = Icons.Outlined.Email,
-                description = R.string.inbox,
-                onValueClicked = { onInboxClicked(Inbox) }
             )
             ProfileAccountIconAndInfo(
                 text = R.string.notification,
@@ -321,14 +312,9 @@ private fun ProfileTopAppBar(
                     contentDescription = stringResource(R.string.search)
                 )
             }
-            IconButton(
-                onClick = { onCartClicked(MyCart) }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = stringResource(R.string.cart)
-                )
-            }
+            MyCartIcon(
+                onCartClicked = { onCartClicked(MyCart) }
+            )
         }
         Spacer(modifier = modifier.height(dimensionResource(R.dimen.dp_3)))
        Row(modifier = modifier) {

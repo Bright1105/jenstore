@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.Divider
 import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,7 +42,7 @@ fun StoreTabRow(
     currentScreen: StoreDestinations
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (currentScreen.route == currentScreen.route) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.background,
+        targetValue = MaterialTheme.colorScheme.background,
         label = "background color"
     )
     Surface(
@@ -51,7 +51,7 @@ fun StoreTabRow(
             .fillMaxWidth(),
         color = backgroundColor
     ) {
-        Divider()
+        HorizontalDivider()
         Row(
             Modifier
                 .selectableGroup()
@@ -60,7 +60,7 @@ fun StoreTabRow(
             allScreensBar.forEach {
                 StoreTab(
                     text = it.route,
-                    icon = it.icon,
+                    icon = if (currentScreen == it) it.selectedIcon else it.unSelectedIcon,
                     onSelected = { onTabSelected(it) },
                     selected = currentScreen == it
                 )
@@ -77,7 +77,7 @@ private fun StoreTab(
     selected: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val color = MaterialTheme.colorScheme.background
+    val color = MaterialTheme.colorScheme.onBackground
     val durationMillis = if (selected) TabFadeInAnimationDuration else TabFadeOutAnimationDuration
     val animSpec = remember {
         tween<Color>(

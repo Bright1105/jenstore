@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.example.jenstore.Splash
 import com.example.jenstore.StoreDestinations
+import com.example.jenstore.data.model.Region
 import com.example.jenstore.data.model.UserAddress
 import com.example.jenstore.data.model.cities
 import com.example.jenstore.data.model.regions
@@ -35,7 +36,7 @@ class AddressViewModel(
     val addressUiState: StateFlow<AddressUiState> = _addressUiState
 
 
-    val regionList = regions
+    val regionList: Region = regions
     val cityList = cities
 
     val address = MutableStateFlow("")

@@ -59,30 +59,32 @@ fun MyCartIcon(
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-        Card(
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary),
-            shape = MaterialTheme.shapes.extraLarge,
-            elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_5)),
-            modifier = Modifier
-                .width(dimensionResource(R.dimen.dp_22))
-                .height(dimensionResource(R.dimen.dp_22))
-                .padding(
-                    top = dimensionResource(R.dimen.dp_5),
-                    end = dimensionResource(R.dimen.dp_5)
-                )
-        ) {
-            Text(
-                text = itemCount,
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.inverseOnSurface,
-                modifier = Modifier
-                    .padding(
-                        start = dimensionResource(R.dimen.dp_5),
-                        end = dimensionResource(R.dimen.dp_5)
-                    )
-            )
-        }
+       if (cartUiState.value.items.isNotEmpty()) {
+           Card(
+               colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary),
+               shape = MaterialTheme.shapes.extraLarge,
+               elevation = CardDefaults.cardElevation(dimensionResource(R.dimen.dp_5)),
+               modifier = Modifier
+                   .width(dimensionResource(R.dimen.dp_22))
+                   .height(dimensionResource(R.dimen.dp_22))
+                   .padding(
+                       top = dimensionResource(R.dimen.dp_5),
+                       end = dimensionResource(R.dimen.dp_5)
+                   )
+           ) {
+               Text(
+                   text = itemCount,
+                   style = MaterialTheme.typography.bodyLarge,
+                   textAlign = TextAlign.Center,
+                   color = MaterialTheme.colorScheme.inverseOnSurface,
+                   modifier = Modifier
+                       .padding(
+                           start = dimensionResource(R.dimen.dp_5),
+                           end = dimensionResource(R.dimen.dp_5)
+                       )
+               )
+           }
+       }
 
     }
 }

@@ -2,19 +2,13 @@ package com.example.jenstore.data.local.cart
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.Timestamp
 
-
-@Entity(tableName = "Orders")
-data class OrdersEntity(
+@Entity(tableName = "Checkout")
+data class CheckoutEntity(
     @PrimaryKey
     val id: String = "",
     val title: String = "",
-    val brand: String = "",
-    val countItem: Int = 0,
-    val price: Int = 0,
-    val description: String? = null,
-    val itemType: String? = null,
     val dateCreated: String? = null,
     val image: String = "",
-    // val itemAvailable: Int,
 )

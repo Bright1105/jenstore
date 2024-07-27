@@ -11,7 +11,6 @@ import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.data.repository.FirebaseRepository
 import com.example.jenstore.data.model.Item
 import com.example.jenstore.data.repository.LocalRepository
-import com.google.firebase.FirebaseError
 import com.google.firebase.FirebaseException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -28,14 +26,7 @@ data class ProductDetailsUiState(
     val currentProduct: Item? = null,
 )
 
-sealed class AddEvent{
 
-    class Info(val message: String): AddEvent()
-
-    class Error(val message: String, val throwable: Throwable): AddEvent()
-}
-
-// set he loading and error and success
 
 sealed interface ProductDetails {
     data class Success(val currentProduct: Item? = null) : ProductDetails
@@ -46,8 +37,6 @@ sealed interface ProductDetails {
 }
 
 
-
-data class Errors(val message: String? = null)
 
 class ProductDetailsViewModel(
     private val firebaseRepository: FirebaseRepository,
@@ -60,18 +49,11 @@ class ProductDetailsViewModel(
     private val _uiState = MutableStateFlow(ProductDetailsUiState())
     val uiState: StateFlow<ProductDetailsUiState> = _uiState
 
-    val currentColor = mutableStateOf(Color.Yellow)
-
-    val currentSize = mutableStateOf("S")
 
     val onFavourite = mutableStateOf(false)
 
     val countItem = mutableIntStateOf(1)
 
-
-    private val _addEvent: MutableSharedFlow<AddEvent> = MutableSharedFlow()
-    val addEvent: Flow<AddEvent>
-        get() = _addEvent
 
     fun onAddToCartClicked(productItem: Item) {
         CoroutineScope(Dispatchers.IO).launch {
@@ -92,13 +74,6 @@ class ProductDetailsViewModel(
                         )
                     )
                 }
-            }.onSuccess {
-                withContext(Dispatchers.Main) {
-                    _addEvent.emit(AddEvent.Info("Product '${productItem}' successfully added to cart."))
-                }
-            }.onFailure {
-                withContext(Dispatchers.Main) {}
-                _addEvent.emit(AddEvent.Error("There was an error while adding the product to cart", it))
             }
         }
     }
@@ -114,13 +89,7 @@ class ProductDetailsViewModel(
     fun onFavouriteClicked() {
         onFavourite.value = true
     }
-    fun onColorSelected(color: Color) {
-        currentColor.value = color
-    }
 
-    fun onSizeSelected(size: String) {
-        currentSize.value = size
-    }
 
     fun productItemById(id: String) {
         viewModelScope.launch {

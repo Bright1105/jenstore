@@ -1,6 +1,7 @@
 package com.example.jenstore.data.service
 
 import android.net.Uri
+import com.example.jenstore.data.model.Checkout
 import com.example.jenstore.data.model.SavedItems
 import com.example.jenstore.data.model.UserAddress
 import com.example.jenstore.data.model.UserInformation
@@ -35,10 +36,16 @@ interface StorageService {
     suspend fun createSavedItems(savedItems: SavedItems)
     suspend fun deleteSavedItems(itemId: String)
 
+    suspend fun checkout(checkout: Checkout)
+    suspend fun updateCancel(checkout: Checkout)
+    suspend fun getCheckoutById(id: String): Checkout?
+    suspend fun deleteCheckout(checkout: Checkout)
 
     val userInfo: Flow<UserInformation?>
     val getUserAddress: Flow<UserAddress?>
     val getSaveItems: Flow<List<SavedItems>>
+    val getCheckout: Flow<List<Checkout>>
+
 }
 
 
@@ -47,6 +54,41 @@ class StorageServiceImpl(
 ) : StorageService {
 
     private var downloadImageUri: Uri? = null
+
+    override suspend fun getCheckoutById(id: String): Checkout? {
+        return withContext(Dispatchers.IO) {
+            Firebase.firestore
+                .collection(CHECKOUT)
+                .document(id)
+                .get()
+                .await()
+                .toObject()
+        }
+    }
+
+    override suspend fun checkout(checkout: Checkout) {
+        Firebase.firestore
+            .collection(CHECKOUT)
+            .add(checkout)
+            .await()
+    }
+
+    override suspend fun deleteCheckout(checkout: Checkout) {
+
+        return withContext(Dispatchers.IO) {
+            Firebase.firestore
+                .collection(CHECKOUT)
+                .document(checkout.id)
+                .delete()
+        }
+    }
+
+    override suspend fun updateCancel(checkout: Checkout) {
+        Firebase.firestore
+            .collection(CHECKOUT)
+            .document(checkout.id)
+            .set(checkout)
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val userInfo: Flow<UserInformation?>
@@ -59,6 +101,19 @@ class StorageServiceImpl(
            }  else {
                flowOf(UserInformation())
            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val getCheckout: Flow<List<Checkout>> =
+        accountService.currentUser.flatMapLatest {  user ->
+            if (user?.id != null) {
+                Firebase.firestore
+                    .collection(CHECKOUT)
+                    .whereEqualTo(USER_ID_FIELD, user.id)
+                    .dataObjects()
+            } else {
+               flowOf()
+            }
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -165,18 +220,22 @@ class StorageServiceImpl(
       //  val user = userInformation.copy(
         //            image = downloadImageUri
         //        )
-        Firebase.firestore
-            .collection(USER_INFORMATION)
-            .document(userInformation.id)
-            .set(userInformation).await()
+        userInformation.id?.let {
+            Firebase.firestore
+                .collection(USER_INFORMATION)
+                .document(it)
+                .set(userInformation).await()
+        }
     }
 
     override suspend fun updateUserAddress(userAddress: UserAddress) {
         withContext(Dispatchers.IO) {
-            Firebase.firestore
-                .collection("address")
-                .document(userAddress.id)
-                .set(userAddress)
+            userAddress.id?.let {
+                Firebase.firestore
+                    .collection("address")
+                    .document(it)
+                    .set(userAddress)
+            }
         }
     }
 
@@ -196,5 +255,6 @@ class StorageServiceImpl(
         private const val USER_SAVED_ITEMS = "userSavedItems"
         private const val PRODUCTS = "products"
         private const val FEED_URI = "feedUri"
+        private const val CHECKOUT = "checkout"
     }
 }

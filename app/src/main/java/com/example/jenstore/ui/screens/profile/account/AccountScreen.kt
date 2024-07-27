@@ -21,16 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ExposedDropdownMenuBox
-import androidx.compose.material.IconButton
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.MenuOpen
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -38,10 +30,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -78,12 +73,10 @@ import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.StoreDestinations
 import com.example.jenstore.data.model.Gender
-import com.example.jenstore.data.model.UserInformation
-import com.example.jenstore.data.model.genderItem
-import com.example.jenstore.ui.theme.Shapes
+import com.example.jenstore.ui.screens.common.MyCartIcon
 
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
     popUpScreen: () -> Unit,
@@ -133,7 +126,6 @@ fun AccountScreen(
                 isEditProfile = uiState.value.editProfile
             )
         },
-        backgroundColor = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = modifier
@@ -490,7 +482,7 @@ fun ProfileTextField(
 @Composable
 private fun AccountTopAppBar(
     onBackClick: () -> Unit,
-    isEditProfile: Boolean
+    isEditProfile: Boolean,
 ) {
     CenterAlignedTopAppBar(
         navigationIcon = {
@@ -509,6 +501,6 @@ private fun AccountTopAppBar(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
-        }
+        },
     )
 }

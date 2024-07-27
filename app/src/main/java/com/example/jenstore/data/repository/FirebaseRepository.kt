@@ -8,7 +8,10 @@ import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.data.local.cart.OrdersDao
 import com.example.jenstore.data.model.Feeds
 import com.example.jenstore.data.model.Item
+import com.example.jenstore.data.model.JennyInfo
+import com.example.jenstore.data.model.Notification
 import com.example.jenstore.data.model.PaginationProducts
+import com.example.jenstore.data.model.Promotions
 import com.example.jenstore.data.paging.FeedPaging
 import com.example.jenstore.data.paging.FeedPagingSource
 import com.example.jenstore.data.paging.ProductsPagingSource
@@ -45,6 +48,12 @@ interface FirebaseRepository {
     fun getPaging(): Flow<PagingData<Feeds>>
 
     fun searchProductPagination(): Flow<PagingData<Item>>
+
+    fun getPromotions(): Flow<List<Promotions>>
+
+    fun getNotification(): Flow<List<Notification>>
+
+    suspend fun getJennyInfo(): List<JennyInfo>
 }
 
 class FirebaseRepositoryImpl(
@@ -58,6 +67,28 @@ class FirebaseRepositoryImpl(
     private val feedConfig: PagingConfig
 ) : FirebaseRepository {
 
+    override suspend fun getJennyInfo(): List<JennyInfo> {
+        return withContext(Dispatchers.IO) {
+            val source = Source.SERVER
+            Firebase.firestore
+                .collection(JENNYINFO)
+                .get(source)
+                .await()
+                .toObjects()
+        }
+    }
+
+    override fun getNotification(): Flow<List<Notification>> {
+        return Firebase.firestore
+            .collection(NOTIFICATION)
+            .dataObjects()
+    }
+
+    override fun getPromotions(): Flow<List<Promotions>> {
+        return Firebase.firestore
+            .collection(PROMOTIONS)
+            .dataObjects()
+    }
 
     override fun searchProductPagination(): Flow<PagingData<Item>>  {
 
@@ -164,6 +195,12 @@ class FirebaseRepositoryImpl(
                 .await()
                 .toObjects(Item::class.java)
         }
+    }
+
+    companion object {
+        private const val PROMOTIONS = "promotions"
+        private const val NOTIFICATION = "notification"
+        private const val JENNYINFO = "jennyInfo"
     }
 
 }

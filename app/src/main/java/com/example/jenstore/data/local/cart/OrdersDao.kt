@@ -20,8 +20,25 @@ interface OrdersDao {
     @Delete
     fun deleteItem(ordersEntity: OrdersEntity)
 
+    @Delete
+    fun clearCart(ordersEntity: List<OrdersEntity>)
+
     @Update
     fun count(ordersEntity: OrdersEntity)
 
+
+}
+
+@Dao
+interface CheckoutDao {
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertCheckout(checkoutEntity: CheckoutEntity)
+
+    @Query("SELECT * FROM checkout ORDER BY dateCreated ASC")
+    fun getAllCheckout(): Flow<List<CheckoutEntity>>
+
+    @Delete
+    fun deleteItem(checkoutEntity: CheckoutEntity)
 
 }
