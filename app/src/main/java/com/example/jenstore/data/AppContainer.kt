@@ -99,7 +99,6 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     override val localRepository: LocalRepository by lazy {
         LocalRepositoryImpl(
             ordersDao = storeDatabase.ordersDao(),
-            checkoutDao = storeDatabase.checkoutDao()
         )
     }
 

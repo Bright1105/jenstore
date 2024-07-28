@@ -27,12 +27,24 @@ data class Checkout(
     @DocumentId
     val id: String = "",
     val userId: String = "",
-    val ordersEntity: OrdersEntity = OrdersEntity(),
+    val itemName: String = "",
+    val itemImage: String = "",
     val orderPending: Boolean = true,
     val orderReceived: Boolean = false,
+    val cancel: Boolean = false,
     val dateCreated: Timestamp? = null
 )
 
+
+data class CheckoutCancel(
+    @DocumentId
+    val id: String = "",
+    val userId: String = "",
+    val itemName: String = "",
+    val itemImage: String = "",
+    val cancel: Boolean = true,
+    val dateCreated: Timestamp? = null
+)
 
 
 data class Item(

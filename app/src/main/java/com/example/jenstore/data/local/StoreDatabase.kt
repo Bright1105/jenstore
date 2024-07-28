@@ -4,17 +4,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.jenstore.data.local.cart.CheckoutDao
-import com.example.jenstore.data.local.cart.CheckoutEntity
 import com.example.jenstore.data.local.cart.OrdersEntity
 import com.example.jenstore.data.local.cart.OrdersDao
 
 
-@Database(entities = [OrdersEntity::class, CheckoutEntity::class], version = 10, exportSchema = false)
+@Database(entities = [OrdersEntity::class], version = 11, exportSchema = false)
 abstract class StoreDatabase : RoomDatabase() {
 
     abstract fun ordersDao(): OrdersDao
-    abstract fun checkoutDao(): CheckoutDao
 
     companion object {
         @Volatile

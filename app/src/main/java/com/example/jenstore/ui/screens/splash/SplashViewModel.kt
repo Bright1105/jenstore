@@ -15,4 +15,5 @@ class SplashViewModel(
         if (accountService.hasUser()) openAndPopUp(Profile, Splash)
         else openAndPopUp(Login, Splash)
     }
+
 }

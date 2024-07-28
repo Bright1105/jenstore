@@ -77,7 +77,8 @@ class CartViewModel(
             for (orders in ordersEntity) {
                 val checkout = Checkout(
                     userId = accountService.currentUserId,
-                    ordersEntity = orders,
+                    itemName = orders.title,
+                    itemImage = orders.image,
                     dateCreated = Timestamp.now()
                 )
                 storageService.checkout(checkout)

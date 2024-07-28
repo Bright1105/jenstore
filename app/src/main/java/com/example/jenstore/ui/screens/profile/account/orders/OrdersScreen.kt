@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -66,8 +65,8 @@ import com.example.jenstore.AppViewModelProvider
 import com.example.jenstore.R
 import com.example.jenstore.Search
 import com.example.jenstore.StoreDestinations
-import com.example.jenstore.data.local.cart.CheckoutEntity
 import com.example.jenstore.data.model.Checkout
+import com.example.jenstore.data.model.CheckoutCancel
 import com.example.jenstore.data.model.JennyInfo
 import com.example.jenstore.ui.screens.common.MyCartIcon
 import kotlinx.coroutines.launch
@@ -83,7 +82,7 @@ fun OrdersScreen(
 
     val uiState = ordersViewModel.uiState.collectAsState()
     val orders = ordersViewModel.orders.collectAsState(initial = emptyList())
-    val checkoutEntity = ordersViewModel.checkoutEntity.collectAsState(initial = emptyList())
+    val ordersCanceled = ordersViewModel.ordersCanceled.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState {
        OrdersTabs.entries.size
@@ -92,11 +91,9 @@ fun OrdersScreen(
     LaunchedEffect(selectedTabIndex) {
         pagerState.animateScrollToPage(selectedTabIndex)
     }
-    //pagerState.isScrollInProgress
+
     LaunchedEffect(pagerState.currentPage, ) {
-//        if (!pagerState.isScrollInProgress) {
-//            selectedTabIndex = pagerState.currentPage
-//        }
+
         selectedTabIndex = pagerState.currentPage
     }
     Scaffold(
@@ -191,11 +188,13 @@ fun OrdersScreen(
                             }
                         }
                     } else {
-                        if (checkoutEntity.value.isEmpty()) {
+                        if (ordersCanceled.value.isEmpty()) {
                             OrdersEmpty()
                         } else {
-                            OrderContentEntityList(
-                                checkoutEntities = checkoutEntity.value
+                            OrderContentCanceledList(
+                                checkouts = ordersCanceled.value.sortedByDescending { date ->
+                                    date.dateCreated
+                                }
                             )
                         }
                     }
@@ -454,24 +453,24 @@ private fun OrdersContentList(
 }
 
 @Composable
-private fun OrderContentEntityList(
-    checkoutEntities: List<CheckoutEntity>,
+private fun OrderContentCanceledList(
+    checkouts: List<CheckoutCancel>,
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
     ) {
-        items(checkoutEntities, key = { checkout -> checkout.id }) {
-            OrderContentEntity(checkoutEntity = it)
+        items(checkouts, key = { checkout -> checkout.id }) {
+            OrderContentCanceled(checkout = it)
         }
     }
 }
 
 @Composable
-private fun OrderContentEntity(
+private fun OrderContentCanceled(
     modifier: Modifier = Modifier,
-    checkoutEntity: CheckoutEntity
+    checkout: CheckoutCancel,
 ) {
     Column(
         modifier = modifier
@@ -487,11 +486,11 @@ private fun OrderContentEntity(
             Row(modifier = Modifier.padding(dimensionResource(R.dimen.dp_10))) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(checkoutEntity.image)
+                        .data(checkout.itemImage)
                         .crossfade(true)
                         .build(),
                     contentScale = ContentScale.Crop,
-                    contentDescription = checkoutEntity.title,
+                    contentDescription = checkout.itemName,
                     modifier = Modifier
                         .size(dimensionResource(R.dimen.dp_100))
                         .padding(
@@ -500,7 +499,7 @@ private fun OrderContentEntity(
                 )
                 Column {
                     Text(
-                        text = checkoutEntity.title,
+                        text = checkout.itemName,
                         style = MaterialTheme.typography.displayLarge,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
@@ -520,7 +519,7 @@ private fun OrderContentEntity(
                             )
                     )
                     Text(
-                        text = checkoutEntity.dateCreated.toString(),
+                        text = checkout.dateCreated?.toDate().toString(),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier
                     )
@@ -551,11 +550,11 @@ private fun OrdersContent(
             Row(modifier = Modifier.padding(dimensionResource(R.dimen.dp_10))) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(checkout.ordersEntity.image)
+                        .data(checkout.itemImage)
                         .crossfade(true)
                         .build(),
                     contentScale = ContentScale.Crop,
-                    contentDescription = checkout.ordersEntity.title,
+                    contentDescription = checkout.itemName,
                     modifier = Modifier
                         .size(dimensionResource(R.dimen.dp_100))
                         .padding(
@@ -564,7 +563,7 @@ private fun OrdersContent(
                 )
                 Column {
                     Text(
-                        text = checkout.ordersEntity.title,
+                        text = checkout.itemName,
                         style = MaterialTheme.typography.displayLarge,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier

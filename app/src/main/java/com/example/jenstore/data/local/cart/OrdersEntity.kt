@@ -16,5 +16,4 @@ data class OrdersEntity(
     val itemType: String? = null,
     val dateCreated: String? = null,
     val image: String = "",
-    // val itemAvailable: Int,
 )

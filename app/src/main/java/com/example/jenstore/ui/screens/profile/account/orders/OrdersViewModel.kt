@@ -1,11 +1,11 @@
 package com.example.jenstore.ui.screens.profile.account.orders
 
 import androidx.lifecycle.ViewModel
-import com.example.jenstore.data.local.cart.CheckoutEntity
 import com.example.jenstore.data.model.Checkout
+import com.example.jenstore.data.model.CheckoutCancel
 import com.example.jenstore.data.repository.FirebaseRepository
-import com.example.jenstore.data.repository.LocalRepository
 import com.example.jenstore.data.service.StorageService
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,28 +25,27 @@ data class OrderUiState(
 
 class OrdersViewModel(
     private val storageService: StorageService,
-    private val firebaseRepository: FirebaseRepository,
-    private val localRepository: LocalRepository
+    private val firebaseRepository: FirebaseRepository
 ) : ViewModel() {
 
     private val _orderUiState = MutableStateFlow(OrderUiState())
     val uiState: StateFlow<OrderUiState> = _orderUiState
 
     val orders: Flow<List<Checkout>> = storageService.getCheckout
-
-    val checkoutEntity: Flow<List<CheckoutEntity>> = localRepository.getCheckoutEntity()
+    val ordersCanceled: Flow<List<CheckoutCancel>> = storageService.getCheckoutCancel
 
     suspend fun updateCanceled(checkout: Checkout) {
         CoroutineScope(Dispatchers.IO).launch {
-            localRepository.addToCheckout(
-                checkoutEntity = CheckoutEntity(
-                    id = checkout.id,
-                    title = checkout.ordersEntity.title,
-                    image = checkout.ordersEntity.image,
-                    dateCreated = checkout.dateCreated?.toDate().toString()
+            runCatching {
+                val checkoutCancel = CheckoutCancel(
+                    itemName = checkout.itemName,
+                    itemImage = checkout.itemImage,
+                    userId = checkout.userId,
+                    dateCreated = Timestamp.now()
                 )
-            )
-            storageService.deleteCheckout(checkout)
+                storageService.checkoutCanceled(checkoutCancel)
+                storageService.deleteCheckout(checkout)
+            }
         }
     }
 

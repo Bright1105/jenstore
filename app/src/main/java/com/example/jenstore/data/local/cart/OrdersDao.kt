@@ -28,17 +28,3 @@ interface OrdersDao {
 
 
 }
-
-@Dao
-interface CheckoutDao {
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertCheckout(checkoutEntity: CheckoutEntity)
-
-    @Query("SELECT * FROM checkout ORDER BY dateCreated ASC")
-    fun getAllCheckout(): Flow<List<CheckoutEntity>>
-
-    @Delete
-    fun deleteItem(checkoutEntity: CheckoutEntity)
-
-}

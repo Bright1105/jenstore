@@ -136,7 +136,6 @@ object AppViewModelProvider {
             OrdersViewModel(
                 storageService = storeApplication().container.storageService,
                 firebaseRepository = storeApplication().container.firebaseRepository,
-                localRepository = storeApplication().container.localRepository
             )
         }
     }

@@ -2,6 +2,7 @@ package com.example.jenstore.data.service
 
 import android.net.Uri
 import com.example.jenstore.data.model.Checkout
+import com.example.jenstore.data.model.CheckoutCancel
 import com.example.jenstore.data.model.SavedItems
 import com.example.jenstore.data.model.UserAddress
 import com.example.jenstore.data.model.UserInformation
@@ -40,11 +41,13 @@ interface StorageService {
     suspend fun updateCancel(checkout: Checkout)
     suspend fun getCheckoutById(id: String): Checkout?
     suspend fun deleteCheckout(checkout: Checkout)
+    suspend fun checkoutCanceled(checkout: CheckoutCancel)
 
     val userInfo: Flow<UserInformation?>
     val getUserAddress: Flow<UserAddress?>
     val getSaveItems: Flow<List<SavedItems>>
     val getCheckout: Flow<List<Checkout>>
+    val getCheckoutCancel: Flow<List<CheckoutCancel>>
 
 }
 
@@ -69,6 +72,13 @@ class StorageServiceImpl(
     override suspend fun checkout(checkout: Checkout) {
         Firebase.firestore
             .collection(CHECKOUT)
+            .add(checkout)
+            .await()
+    }
+
+    override suspend fun checkoutCanceled(checkout: CheckoutCancel) {
+        Firebase.firestore
+            .collection(CHECKOUTCANCELED)
             .add(checkout)
             .await()
     }
@@ -113,6 +123,19 @@ class StorageServiceImpl(
                     .dataObjects()
             } else {
                flowOf()
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val getCheckoutCancel: Flow<List<CheckoutCancel>> =
+        accountService.currentUser.flatMapLatest { user ->
+            if (user?.id != null) {
+                Firebase.firestore
+                    .collection(CHECKOUTCANCELED)
+                    .whereEqualTo(USER_ID_FIELD, user.id)
+                    .dataObjects()
+            } else {
+                flowOf()
             }
         }
 
@@ -256,5 +279,6 @@ class StorageServiceImpl(
         private const val PRODUCTS = "products"
         private const val FEED_URI = "feedUri"
         private const val CHECKOUT = "checkout"
+        private const val CHECKOUTCANCELED = "checkoutCanceled"
     }
 }
