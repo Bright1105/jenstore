@@ -7,22 +7,15 @@ import com.example.jenstore.data.model.SavedItems
 import com.example.jenstore.data.model.UserAddress
 import com.example.jenstore.data.model.UserInformation
 import com.google.firebase.Firebase
-import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.dataObjects
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.toObject
-import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMap
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 

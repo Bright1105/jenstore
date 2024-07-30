@@ -42,6 +42,7 @@ data class CheckoutCancel(
     val userId: String = "",
     val itemName: String = "",
     val itemImage: String = "",
+    val reason: String = "",
     val cancel: Boolean = true,
     val dateCreated: Timestamp? = null
 )
